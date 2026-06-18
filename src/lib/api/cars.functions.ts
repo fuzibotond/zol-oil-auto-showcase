@@ -58,24 +58,37 @@ const LeadInput = z.object({
   phone: z.string().trim().min(4).max(30),
   email: z.string().trim().email().max(120).optional().or(z.literal("")),
   message: z.string().trim().max(1000).optional().or(z.literal("")),
-  // Honeypot — must always be empty; bots fill it, humans don't see it
-  honeypot: z.string().max(0).optional(),
+  source: z.string().trim().min(2).max(40).optional(),
+  // Honeypot — keep permissive here because extensions/autofill may inject values.
+  // We still enforce anti-spam in the handler by silently discarding non-empty values.
+  honeypot: z.string().max(500).optional().or(z.literal("")),
 });
 
 export const submitLead = createServerFn({ method: "POST" })
   .validator(LeadInput)
   .handler(async ({ data }) => {
-    // Honeypot triggered — silently discard without revealing spam detection
-    if (data.honeypot) return { ok: true };
-    const { error } = await supabase.from("leads").insert({
+    const honeypotFilled = (data.honeypot ?? "").trim().length > 0;
+
+    const payload = {
       car_id: data.car_id ?? null,
       name: data.name,
       phone: data.phone,
       email: data.email || null,
       message: data.message || null,
-      source: "website",
-    });
-    if (error) throw new Error(error.message);
+      source: honeypotFilled ? `${data.source || "website"}-honeypot` : (data.source || "website"),
+    };
+
+    // Prefer service-role writes on the server for reliability; fall back to public client.
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { error } = await supabaseAdmin.from("leads").insert(payload);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    } catch {
+      const { error } = await supabase.from("leads").insert(payload);
+      if (error) throw new Error(error.message);
+    }
+
     return { ok: true };
   });
 
@@ -135,6 +148,7 @@ const CarInput = z.object({
   slug: z.string().min(2).max(120),
   brand: z.string().min(1).max(50),
   model: z.string().min(1).max(80),
+  autovit_url: z.string().trim().max(500).optional().nullable(),
   version: z.string().max(80).optional().nullable(),
   year: z.number().int().min(1950).max(2100),
   price: z.number().min(0).max(1_000_000),

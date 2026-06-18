@@ -13,6 +13,7 @@ export interface Car {
   slug: string;
   brand: string;
   model: string;
+  autovit_url: string | null;
   version: string | null;
   year: number;
   price: number;
@@ -43,4 +44,16 @@ export interface Lead {
   source: string | null;
   status: "nou" | "contactat" | "inchis";
   created_at: string;
+}
+
+export interface SiteSettings {
+  id: string;
+  contact_email: string;
+  phone: string;
+  phone_display: string;
+  whatsapp: string;
+  opening_hours: { day: string; value: string }[];
+  social_links: { key: string; label: string; url: string; enabled: boolean }[];
+  created_at: string;
+  updated_at: string;
 }

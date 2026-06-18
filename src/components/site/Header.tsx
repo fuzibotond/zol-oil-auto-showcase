@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Phone, MessageCircle, MapPin, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { SITE } from "@/lib/site";
+import { useSiteSettings } from "@/hooks/use-site-settings";
 
 const navLinks = [
   { to: "/" as const, label: "Acasă" },
@@ -11,12 +12,14 @@ const navLinks = [
 
 export function Header() {
   const [open, setOpen] = useState(false);
+  const { settings } = useSiteSettings();
+
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-foreground text-background font-display text-sm font-bold">
-            Z
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl overflow-hidden">
+            <img src="/favicon-96x96.png" alt="ZOL-OIL logo" className="h-9 w-9 object-contain" />
           </div>
           <div className="leading-tight">
             <div className="font-display text-base font-semibold tracking-tight">ZOL-OIL</div>
@@ -39,10 +42,10 @@ export function Header() {
         </nav>
 
         <div className="hidden md:flex items-center gap-2">
-          <a href={`tel:${SITE.phone}`} className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-2 text-sm font-medium hover:bg-secondary">
-            <Phone className="h-4 w-4" /> {SITE.phoneDisplay}
+          <a href={`tel:${settings.phone}`} className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-2 text-sm font-medium hover:bg-secondary">
+            <Phone className="h-4 w-4" /> {settings.phone_display}
           </a>
-          <a href={`https://wa.me/${SITE.whatsapp}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90">
+          <a href={`https://wa.me/${settings.whatsapp}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90">
             <MessageCircle className="h-4 w-4" /> WhatsApp
           </a>
         </div>
@@ -61,10 +64,10 @@ export function Header() {
               </Link>
             ))}
             <div className="mt-2 grid grid-cols-2 gap-2">
-              <a href={`tel:${SITE.phone}`} className="inline-flex items-center justify-center gap-2 rounded-xl border border-border px-3 py-3 text-sm">
+              <a href={`tel:${settings.phone}`} className="inline-flex items-center justify-center gap-2 rounded-xl border border-border px-3 py-3 text-sm">
                 <Phone className="h-4 w-4" /> Sună
               </a>
-              <a href={`https://wa.me/${SITE.whatsapp}`} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-3 py-3 text-sm text-accent-foreground">
+              <a href={`https://wa.me/${settings.whatsapp}`} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-3 py-3 text-sm text-accent-foreground">
                 <MessageCircle className="h-4 w-4" /> WhatsApp
               </a>
             </div>

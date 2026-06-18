@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Phone, Mail, MapPin, Facebook, MessageCircle, Send } from "lucide-react";
+import { Phone, Mail, MapPin, Facebook, MessageCircle, Send, Instagram, Music2, Youtube, ExternalLink } from "lucide-react";
 import { SITE } from "@/lib/site";
 import { LeadForm } from "@/components/site/LeadForm";
+import { useSiteSettings } from "@/hooks/use-site-settings";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -18,6 +19,18 @@ export const Route = createFileRoute("/contact")({
 });
 
 function ContactPage() {
+  const { settings } = useSiteSettings();
+  const socialByKey = new Map(settings.social_links.map((s) => [s.key, s]));
+  const socialButtons = [
+    { key: "messenger", label: "Messenger", icon: Send, tone: "bg-foreground text-background" },
+    { key: "facebook", label: "Facebook", icon: Facebook, tone: "border border-border bg-card" },
+    { key: "instagram", label: "Instagram", icon: Instagram, tone: "border border-border bg-card" },
+    { key: "tiktok", label: "TikTok", icon: Music2, tone: "border border-border bg-card" },
+    { key: "youtube", label: "YouTube", icon: Youtube, tone: "border border-border bg-card" },
+    { key: "autovit", label: "Autovit", icon: ExternalLink, tone: "border border-border bg-card" },
+    { key: "olx", label: "OLX", icon: ExternalLink, tone: "border border-border bg-card" },
+  ] as const;
+
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-12">
       <div className="text-xs font-medium text-accent uppercase tracking-wider">Contact</div>
@@ -28,14 +41,14 @@ function ContactPage() {
         <div className="space-y-4">
           <div className="surface-card p-6 space-y-4">
             <Item icon={<MapPin className="h-5 w-5" />} label="Adresă" value={SITE.address} />
-            <Item icon={<Phone className="h-5 w-5" />} label="Telefon" value={SITE.phoneDisplay} href={`tel:${SITE.phone}`} />
-            <Item icon={<Mail className="h-5 w-5" />} label="Email" value={SITE.email} href={`mailto:${SITE.email}`} />
+            <Item icon={<Phone className="h-5 w-5" />} label="Telefon" value={settings.phone_display} href={`tel:${settings.phone}`} />
+            <Item icon={<Mail className="h-5 w-5" />} label="Email" value={settings.contact_email} href={`mailto:${settings.contact_email}`} />
           </div>
 
           <div className="surface-card p-6">
             <div className="font-display text-lg font-semibold">Program</div>
             <div className="mt-3 space-y-2 text-sm">
-              {SITE.hours.map((h) => (
+              {settings.opening_hours.map((h) => (
                 <div key={h.day} className="flex justify-between border-b border-border/60 py-1.5">
                   <span className="text-muted-foreground">{h.day}</span>
                   <span className="font-medium">{h.value}</span>
@@ -47,9 +60,17 @@ function ContactPage() {
           <div className="surface-card p-6">
             <div className="font-display text-lg font-semibold">Contact rapid</div>
             <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <a href={`https://wa.me/${SITE.whatsapp}`} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3 text-sm font-medium text-accent-foreground"><MessageCircle className="h-4 w-4" /> WhatsApp</a>
-              <a href={SITE.messenger} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-xl bg-foreground px-4 py-3 text-sm font-medium text-background"><Send className="h-4 w-4" /> Messenger</a>
-              <a href={SITE.facebook} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium"><Facebook className="h-4 w-4" /> Facebook</a>
+              <a href={`https://wa.me/${settings.whatsapp}`} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3 text-sm font-medium text-accent-foreground"><MessageCircle className="h-4 w-4" /> WhatsApp</a>
+              {socialButtons.map((button) => {
+                const item = socialByKey.get(button.key);
+                if (!item?.enabled || !item.url) return null;
+                const Icon = button.icon;
+                return (
+                  <a key={button.key} href={item.url} target="_blank" rel="noreferrer" className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium ${button.tone}`}>
+                    <Icon className="h-4 w-4" /> {button.label}
+                  </a>
+                );
+              })}
               <a href={SITE.mapsDirections} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium"><MapPin className="h-4 w-4" /> Direcții</a>
             </div>
           </div>
@@ -59,7 +80,7 @@ function ContactPage() {
           <div className="overflow-hidden rounded-2xl border border-border min-h-[360px]">
             <iframe title="Hartă ZOL-OIL Cernat" src={SITE.mapsEmbed} className="h-full min-h-[360px] w-full" loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
           </div>
-          <LeadForm />
+          <LeadForm source="contact-page" />
         </div>
       </div>
     </div>

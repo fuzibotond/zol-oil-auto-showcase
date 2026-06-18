@@ -8,6 +8,7 @@ import { adminUpsertCar } from "@/lib/api/cars.functions";
 import type { Car } from "@/lib/types";
 import { slugify } from "@/lib/format";
 import { FUEL_TYPES, TRANSMISSIONS, BODY_TYPES, STATUSES, STATUS_LABEL } from "@/lib/site";
+import { supabase } from "@/integrations/supabase/client";
 
 type ImageRow = { url: string; alt_text?: string | null };
 
@@ -22,6 +23,7 @@ export function AdminCarForm({ initial }: Props) {
     slug: initial?.slug ?? "",
     brand: initial?.brand ?? "",
     model: initial?.model ?? "",
+    autovit_url: initial?.autovit_url ?? "",
     version: initial?.version ?? "",
     year: initial?.year ?? new Date().getFullYear() - 5,
     price: initial?.price ?? 0,
@@ -42,6 +44,7 @@ export function AdminCarForm({ initial }: Props) {
     (initial?.images ?? []).map((i) => ({ url: i.url, alt_text: i.alt_text ?? "" }))
   );
   const [newImage, setNewImage] = useState("");
+  const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
 
   function autoSlug() {
@@ -55,6 +58,35 @@ export function AdminCarForm({ initial }: Props) {
     if (!url) return;
     setImages((arr) => [...arr, { url, alt_text: `${form.brand} ${form.model}` }]);
     setNewImage("");
+  }
+
+  async function uploadImages(files: FileList | null) {
+    if (!files?.length) return;
+    setUploading(true);
+    try {
+      const uploaded: ImageRow[] = [];
+      for (const file of Array.from(files)) {
+        const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+        const safeExt = ext.replace(/[^a-z0-9]/g, "") || "jpg";
+        const path = `cars/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${safeExt}`;
+        const { error } = await supabase.storage.from("car-images").upload(path, file, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+        if (error) throw error;
+        const { data } = supabase.storage.from("car-images").getPublicUrl(path);
+        uploaded.push({
+          url: data.publicUrl,
+          alt_text: `${form.brand} ${form.model}`.trim(),
+        });
+      }
+      setImages((arr) => [...arr, ...uploaded]);
+      toast.success(`Au fost încărcate ${uploaded.length} imagine(i).`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Nu am putut încărca imaginile.");
+    } finally {
+      setUploading(false);
+    }
   }
 
   function move(idx: number, dir: -1 | 1) {
@@ -81,6 +113,7 @@ export function AdminCarForm({ initial }: Props) {
         engine_size: form.engine_size ? Number(form.engine_size) : null,
         power: form.power ? Number(form.power) : null,
         equipment: form.equipment.split(/\r?\n/).map((s) => s.trim()).filter(Boolean),
+        autovit_url: form.autovit_url?.trim() || null,
         version: form.version || null,
         body_type: form.body_type || null,
         color: form.color || null,
@@ -106,6 +139,7 @@ export function AdminCarForm({ initial }: Props) {
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <F label="Marcă *"><input required value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} onBlur={autoSlug} className={inputCls} /></F>
           <F label="Model *"><input required value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} onBlur={autoSlug} className={inputCls} /></F>
+          <F label="Link Autovit"><input value={form.autovit_url ?? ""} onChange={(e) => setForm({ ...form, autovit_url: e.target.value })} placeholder="https://www.autovit.ro/..." className={inputCls} /></F>
           <F label="Versiune"><input value={form.version} onChange={(e) => setForm({ ...form, version: e.target.value })} className={inputCls} /></F>
           <F label="An *"><input required type="number" value={form.year} onChange={(e) => setForm({ ...form, year: Number(e.target.value) })} className={inputCls} /></F>
           <F label="Preț *"><input required type="number" value={form.price} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} className={inputCls} /></F>
@@ -148,7 +182,19 @@ export function AdminCarForm({ initial }: Props) {
 
       <section className="surface-card p-6">
         <div className="font-display text-lg font-semibold">Imagini</div>
-        <p className="mt-1 text-xs text-muted-foreground">Adaugă URL-uri ale imaginilor (Cloudinary, Imgur, Unsplash, etc.). Prima imagine este cea principală.</p>
+        <p className="mt-1 text-xs text-muted-foreground">Încarcă direct de pe dispozitiv (stocare Supabase) sau adaugă URL-uri externe. Prima imagine este cea principală.</p>
+        <div className="mt-3">
+          <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm hover:bg-secondary">
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => uploadImages(e.target.files)}
+            />
+            {uploading ? "Se încarcă..." : "Încarcă din dispozitiv"}
+          </label>
+        </div>
         <div className="mt-4 flex gap-2">
           <input value={newImage} onChange={(e) => setNewImage(e.target.value)} placeholder="https://..." className={`${inputCls} flex-1`} />
           <button type="button" onClick={addImage} className="inline-flex items-center gap-2 rounded-xl bg-foreground px-4 py-2.5 text-sm text-background">

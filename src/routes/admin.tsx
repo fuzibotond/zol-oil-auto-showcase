@@ -3,14 +3,19 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { checkIsAdmin } from "@/lib/api/cars.functions";
-import { Car, Users, LogOut, ShieldAlert, LayoutDashboard, Plus } from "lucide-react";
+import { Car, Users, LogOut, ShieldAlert, LayoutDashboard, Plus, Settings } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   ssr: false,
   beforeLoad: async () => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) throw redirect({ to: "/auth" });
-    return { user: data.user };
+    try {
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data.user) throw redirect({ to: "/auth" });
+      return { user: data.user };
+    } catch {
+      // Offline/network failures should not crash route loading.
+      throw redirect({ to: "/auth" });
+    }
   },
   component: AdminLayout,
 });
@@ -54,6 +59,7 @@ function AdminLayout() {
     { to: "/admin" as const, label: "Dashboard", icon: LayoutDashboard, exact: true },
     { to: "/admin/masini" as const, label: "Mașini", icon: Car },
     { to: "/admin/leaduri" as const, label: "Leaduri", icon: Users },
+    { to: "/admin/setari" as const, label: "Setări", icon: Settings },
   ];
 
   return (

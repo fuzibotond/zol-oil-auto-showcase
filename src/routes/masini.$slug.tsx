@@ -5,7 +5,7 @@ import { useState } from "react";
 import {
   ArrowLeft, Calendar, Cog, Fuel, Gauge, Palette, Zap,
   Car as CarIcon, Share2, ChevronLeft, ChevronRight,
-  CheckCircle2, Phone, MessageCircle, Send,
+  CheckCircle2, Phone, MessageCircle, Send, ExternalLink,
 } from "lucide-react";
 import { getCarBySlug, similarCars } from "@/lib/api/cars.functions";
 import { fmtKm, fmtPrice, fmtNumber } from "@/lib/format";
@@ -13,6 +13,7 @@ import { SITE } from "@/lib/site";
 import { StatusBadge } from "@/components/site/StatusBadge";
 import { LeadForm } from "@/components/site/LeadForm";
 import { CarCard } from "@/components/site/CarCard";
+import { useSiteSettings } from "@/hooks/use-site-settings";
 
 const PLACEHOLDER = "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1600&q=80&auto=format&fit=crop";
 
@@ -49,6 +50,8 @@ type Tab = "specs" | "descriere" | "dotari";
 
 function CarDetail() {
   const { car } = Route.useLoaderData() as { car: import("@/lib/types").Car };
+  const { settings } = useSiteSettings();
+  const messenger = settings.social_links.find((x) => x.key === "messenger");
   const fetchSimilar = useServerFn(similarCars);
   const { data: similar = [] } = useQuery({
     queryKey: ["similar", car.id],
@@ -237,32 +240,44 @@ function CarDetail() {
               </div>
               <div className="px-6 py-5 space-y-3">
                 <a
-                  href={`tel:${SITE.phone}`}
+                  href={`tel:${settings.phone}`}
                   className="flex items-center justify-center gap-2 w-full rounded-xl bg-foreground px-4 py-3 text-sm font-medium text-background hover:opacity-90 transition-opacity"
                 >
                   <Phone className="h-4 w-4" /> Sună acum
                 </a>
                 <a
-                  href={`https://wa.me/${SITE.whatsapp}?text=${waMsg}`}
+                  href={`https://wa.me/${settings.whatsapp}?text=${waMsg}`}
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center justify-center gap-2 w-full rounded-xl bg-accent px-4 py-3 text-sm font-medium text-accent-foreground hover:opacity-90 transition-opacity"
                 >
                   <MessageCircle className="h-4 w-4" /> WhatsApp
                 </a>
-                <a
-                  href={SITE.messenger}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-center gap-2 w-full rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium hover:bg-secondary transition-colors"
-                >
-                  <Send className="h-4 w-4" /> Messenger
-                </a>
+                {messenger?.enabled && messenger.url && (
+                  <a
+                    href={messenger.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-center gap-2 w-full rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium hover:bg-secondary transition-colors"
+                  >
+                    <Send className="h-4 w-4" /> Messenger
+                  </a>
+                )}
+                {car.autovit_url && (
+                  <a
+                    href={car.autovit_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-center gap-2 w-full rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium hover:bg-secondary transition-colors"
+                  >
+                    <ExternalLink className="h-4 w-4" /> Vezi pe Autovit
+                  </a>
+                )}
               </div>
             </div>
 
             {/* Lead form */}
-            <LeadForm carId={car.id} carTitle={`${title} ${car.year}`} />
+            <LeadForm carId={car.id} carTitle={`${title} ${car.year}`} source="car-detail" />
 
             {/* Quick info card */}
             <div className="surface-card p-5 space-y-3">
@@ -314,8 +329,8 @@ function CarDetail() {
             <div className="text-[11px] text-muted-foreground truncate">{title} · {car.year}</div>
             <div className="font-display text-lg font-bold leading-tight">{fmtPrice(car.price, car.currency)}</div>
           </div>
-          <a href={`tel:${SITE.phone}`} className="rounded-xl bg-foreground px-4 py-2.5 text-sm font-medium text-background whitespace-nowrap">Sună</a>
-          <a href={`https://wa.me/${SITE.whatsapp}?text=${waMsg}`} target="_blank" rel="noreferrer" className="rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground whitespace-nowrap">WhatsApp</a>
+          <a href={`tel:${settings.phone}`} className="rounded-xl bg-foreground px-4 py-2.5 text-sm font-medium text-background whitespace-nowrap">Sună</a>
+          <a href={`https://wa.me/${settings.whatsapp}?text=${waMsg}`} target="_blank" rel="noreferrer" className="rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground whitespace-nowrap">WhatsApp</a>
         </div>
       </div>
     </div>

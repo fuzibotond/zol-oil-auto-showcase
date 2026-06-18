@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
+import { CookieConsent } from "@/components/site/CookieConsent";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -83,7 +84,7 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="ro">
       <head><HeadContent /></head>
-      <body>{children}<Scripts /></body>
+      <body suppressHydrationWarning>{children}<Scripts /></body>
     </html>
   );
 }
@@ -105,12 +106,13 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="flex min-h-screen flex-col">
+      <div suppressHydrationWarning className="flex min-h-screen flex-col">
         {!isAdmin && <Header />}
         <main className="flex-1">
           <Outlet />
         </main>
         {!isAdmin && <Footer />}
+        {!isAdmin && <CookieConsent />}
       </div>
       <Toaster />
     </QueryClientProvider>

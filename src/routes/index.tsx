@@ -5,6 +5,7 @@ import { ArrowRight, ShieldCheck, MapPin, Phone, Facebook } from "lucide-react";
 import { listCars } from "@/lib/api/cars.functions";
 import { CarCard } from "@/components/site/CarCard";
 import { SITE } from "@/lib/site";
+import { useSiteSettings } from "@/hooks/use-site-settings";
 
 const CREAM = "#EDEAE2";
 const DARK  = "#252018";
@@ -26,6 +27,8 @@ export const Route = createFileRoute("/")({
 
 function HomePage() {
   const fetchCars = useServerFn(listCars);
+  const { settings } = useSiteSettings();
+  const facebook = settings.social_links.find((x) => x.key === "facebook");
   const { data: featured = [] } = useQuery({
     queryKey: ["cars", "featured"],
     queryFn: () => fetchCars({ data: { featured: true, limit: 6 } }),
@@ -156,7 +159,7 @@ function HomePage() {
                   Vezi mașinile <ArrowRight size={16} />
                 </Link>
                 <a
-                  href={`https://wa.me/${SITE.whatsapp}`}
+                  href={`https://wa.me/${settings.whatsapp}`}
                   target="_blank" rel="noreferrer"
                   style={{
                     display: "inline-flex", alignItems: "center", gap: "0.5rem",
@@ -183,7 +186,9 @@ function HomePage() {
               <div style={{ marginTop: "0.6rem", display: "flex", flexDirection: "column", gap: "0.3rem" }}>
                 <div style={{ fontSize: "11px", color: DARK + "65" }}>Locație: {SITE.city}</div>
                 <div style={{ fontSize: "11px", color: DARK + "65" }}>Județ: {SITE.county}</div>
-                <div style={{ fontSize: "11px", color: DARK + "65" }}>L–V / 09:00–18:00</div>
+                <div style={{ fontSize: "11px", color: DARK + "65" }}>
+                  {settings.opening_hours[0]?.day ?? "Luni - Vineri"} / {settings.opening_hours[0]?.value ?? "09:00 - 18:00"}
+                </div>
               </div>
               <div style={{
                 marginTop: "0.75rem", paddingTop: "0.75rem",
@@ -237,7 +242,7 @@ function HomePage() {
             <p style={{ color: DARK + "70" }}>
               În curând adăugăm mașinile disponibile. Contactează-ne direct pentru oferte actuale.
             </p>
-            <a href={`https://wa.me/${SITE.whatsapp}`} target="_blank" rel="noreferrer"
+            <a href={`https://wa.me/${settings.whatsapp}`} target="_blank" rel="noreferrer"
               style={{ display: "inline-flex", alignItems: "center", marginTop: "1rem", borderRadius: "9999px", padding: "0.6rem 1.25rem", background: OG, color: "#fff", fontSize: "0.85rem", fontWeight: 700, textDecoration: "none" }}>
               Scrie pe WhatsApp
             </a>
@@ -267,25 +272,27 @@ function HomePage() {
       </section>
 
       {/* ===== FACEBOOK CTA ===== */}
-      <section style={{ maxWidth: "1280px", margin: "0 auto", padding: "0 clamp(1.25rem, 4vw, 3rem)", paddingBottom: "5rem" }}>
-        <div style={{
-          display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between",
-          gap: "1.5rem", background: DARK, borderRadius: "1.5rem", padding: "2rem 2.5rem",
-        }}>
-          <div>
-            <div style={{ fontFamily: "'Sora', system-ui, sans-serif", fontWeight: 800, fontSize: "1.4rem", color: CREAM }}>
-              Urmărește-ne pe Facebook
+      {facebook?.enabled && facebook.url && (
+        <section style={{ maxWidth: "1280px", margin: "0 auto", padding: "0 clamp(1.25rem, 4vw, 3rem)", paddingBottom: "5rem" }}>
+          <div style={{
+            display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between",
+            gap: "1.5rem", background: DARK, borderRadius: "1.5rem", padding: "2rem 2.5rem",
+          }}>
+            <div>
+              <div style={{ fontFamily: "'Sora', system-ui, sans-serif", fontWeight: 800, fontSize: "1.4rem", color: CREAM }}>
+                Urmărește-ne pe Facebook
+              </div>
+              <p style={{ fontSize: "0.85rem", color: CREAM + "70", marginTop: "0.3rem" }}>
+                Postăm constant mașini noi pe Marketplace și pe pagina noastră.
+              </p>
             </div>
-            <p style={{ fontSize: "0.85rem", color: CREAM + "70", marginTop: "0.3rem" }}>
-              Postăm constant mașini noi pe Marketplace și pe pagina noastră.
-            </p>
+            <a href={facebook.url} target="_blank" rel="noreferrer"
+              style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", background: OG, color: "#fff", padding: "0.8rem 1.5rem", borderRadius: "9999px", fontSize: "0.875rem", fontWeight: 700, textDecoration: "none", flexShrink: 0 }}>
+              <Facebook size={16} /> Vezi pagina
+            </a>
           </div>
-          <a href={SITE.facebook} target="_blank" rel="noreferrer"
-            style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", background: OG, color: "#fff", padding: "0.8rem 1.5rem", borderRadius: "9999px", fontSize: "0.875rem", fontWeight: 700, textDecoration: "none", flexShrink: 0 }}>
-            <Facebook size={16} /> Vezi pagina
-          </a>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ===== LOCATION ===== */}
       <section style={{ maxWidth: "1280px", margin: "0 auto", padding: "0 clamp(1.25rem, 4vw, 3rem)", paddingBottom: "6rem" }}>
@@ -309,7 +316,7 @@ function HomePage() {
               </a>
             </div>
             <div style={{ marginTop: "1.5rem" }}>
-              {SITE.hours.map((h) => (
+              {settings.opening_hours.map((h) => (
                 <div key={h.day} style={{ display: "flex", justifyContent: "space-between", padding: "0.5rem 0", borderBottom: `1px solid ${DARK}12`, fontSize: "0.875rem" }}>
                   <span style={{ color: DARK + "70" }}>{h.day}</span>
                   <span style={{ fontWeight: 700, color: DARK }}>{h.value}</span>

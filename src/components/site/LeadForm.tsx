@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { submitLead } from "@/lib/api/cars.functions";
 import { toast } from "sonner";
 
-export function LeadForm({ carId, carTitle }: { carId?: string; carTitle?: string }) {
+export function LeadForm({ carId, carTitle, source = "website" }: { carId?: string; carTitle?: string; source?: string }) {
   const submit = useServerFn(submitLead);
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -20,6 +20,7 @@ export function LeadForm({ carId, carTitle }: { carId?: string; carTitle?: strin
           phone: String(fd.get("phone") ?? ""),
           email: String(fd.get("email") ?? ""),
           message: String(fd.get("message") ?? "") || (carTitle ? `Sunt interesat de ${carTitle}` : ""),
+          source,
           honeypot: String(fd.get("honeypot") ?? ""),
         },
       });

@@ -18,6 +18,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as MasiniIndexRouteImport } from './routes/masini.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as MasiniSlugRouteImport } from './routes/masini.$slug'
+import { Route as AdminSetariRouteImport } from './routes/admin.setari'
 import { Route as AdminMasiniRouteImport } from './routes/admin.masini'
 import { Route as AdminLeaduriRouteImport } from './routes/admin.leaduri'
 import { Route as AdminMasiniIndexRouteImport } from './routes/admin.masini.index'
@@ -69,6 +70,11 @@ const MasiniSlugRoute = MasiniSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => MasiniRoute,
 } as any)
+const AdminSetariRoute = AdminSetariRouteImport.update({
+  id: '/setari',
+  path: '/setari',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminMasiniRoute = AdminMasiniRouteImport.update({
   id: '/masini',
   path: '/masini',
@@ -104,6 +110,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/leaduri': typeof AdminLeaduriRoute
   '/admin/masini': typeof AdminMasiniRouteWithChildren
+  '/admin/setari': typeof AdminSetariRoute
   '/masini/$slug': typeof MasiniSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/masini/': typeof MasiniIndexRoute
@@ -117,6 +124,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/leaduri': typeof AdminLeaduriRoute
+  '/admin/setari': typeof AdminSetariRoute
   '/masini/$slug': typeof MasiniSlugRoute
   '/admin': typeof AdminIndexRoute
   '/masini': typeof MasiniIndexRoute
@@ -134,6 +142,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/leaduri': typeof AdminLeaduriRoute
   '/admin/masini': typeof AdminMasiniRouteWithChildren
+  '/admin/setari': typeof AdminSetariRoute
   '/masini/$slug': typeof MasiniSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/masini/': typeof MasiniIndexRoute
@@ -152,6 +161,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/admin/leaduri'
     | '/admin/masini'
+    | '/admin/setari'
     | '/masini/$slug'
     | '/admin/'
     | '/masini/'
@@ -165,6 +175,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/sitemap.xml'
     | '/admin/leaduri'
+    | '/admin/setari'
     | '/masini/$slug'
     | '/admin'
     | '/masini'
@@ -181,6 +192,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/admin/leaduri'
     | '/admin/masini'
+    | '/admin/setari'
     | '/masini/$slug'
     | '/admin/'
     | '/masini/'
@@ -263,6 +275,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MasiniSlugRouteImport
       parentRoute: typeof MasiniRoute
     }
+    '/admin/setari': {
+      id: '/admin/setari'
+      path: '/setari'
+      fullPath: '/admin/setari'
+      preLoaderRoute: typeof AdminSetariRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/masini': {
       id: '/admin/masini'
       path: '/masini'
@@ -320,12 +339,14 @@ const AdminMasiniRouteWithChildren = AdminMasiniRoute._addFileChildren(
 interface AdminRouteChildren {
   AdminLeaduriRoute: typeof AdminLeaduriRoute
   AdminMasiniRoute: typeof AdminMasiniRouteWithChildren
+  AdminSetariRoute: typeof AdminSetariRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminLeaduriRoute: AdminLeaduriRoute,
   AdminMasiniRoute: AdminMasiniRouteWithChildren,
+  AdminSetariRoute: AdminSetariRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 

@@ -51,6 +51,7 @@ export type Database = {
       }
       cars: {
         Row: {
+          autovit_url: string | null
           body_type: string | null
           brand: string
           color: string | null
@@ -74,6 +75,7 @@ export type Database = {
           year: number
         }
         Insert: {
+          autovit_url?: string | null
           body_type?: string | null
           brand: string
           color?: string | null
@@ -97,6 +99,7 @@ export type Database = {
           year: number
         }
         Update: {
+          autovit_url?: string | null
           body_type?: string | null
           brand?: string
           color?: string | null
@@ -164,6 +167,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      site_settings: {
+        Row: {
+          contact_email: string
+          created_at: string
+          id: string
+          opening_hours: Json
+          phone: string
+          phone_display: string
+          social_links: Json
+          updated_at: string
+          whatsapp: string
+        }
+        Insert: {
+          contact_email: string
+          created_at?: string
+          id?: string
+          opening_hours?: Json
+          phone: string
+          phone_display: string
+          social_links?: Json
+          updated_at?: string
+          whatsapp: string
+        }
+        Update: {
+          contact_email?: string
+          created_at?: string
+          id?: string
+          opening_hours?: Json
+          phone?: string
+          phone_display?: string
+          social_links?: Json
+          updated_at?: string
+          whatsapp?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
