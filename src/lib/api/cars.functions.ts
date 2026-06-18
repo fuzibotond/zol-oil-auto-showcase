@@ -7,7 +7,7 @@ import type { Car, CarImage, Lead } from "@/lib/types";
 // ---------- Public reads ----------
 
 export const listCars = createServerFn({ method: "GET" })
-  .inputValidator((input: { featured?: boolean; limit?: number } | undefined) => input ?? {})
+  .validator((input: { featured?: boolean; limit?: number } | undefined) => input ?? {})
   .handler(async ({ data }) => {
     let q = supabase
       .from("cars")
@@ -22,7 +22,7 @@ export const listCars = createServerFn({ method: "GET" })
   });
 
 export const getCarBySlug = createServerFn({ method: "GET" })
-  .inputValidator((slug: string) => slug)
+  .validator((slug: string) => slug)
   .handler(async ({ data: slug }) => {
     const { data: row, error } = await supabase
       .from("cars")
@@ -37,7 +37,7 @@ export const getCarBySlug = createServerFn({ method: "GET" })
   });
 
 export const similarCars = createServerFn({ method: "GET" })
-  .inputValidator((input: { excludeId: string; brand: string }) => input)
+  .validator((input: { excludeId: string; brand: string }) => input)
   .handler(async ({ data }) => {
     const { data: rows, error } = await supabase
       .from("cars")
@@ -54,14 +54,19 @@ export const similarCars = createServerFn({ method: "GET" })
 const LeadInput = z.object({
   car_id: z.string().uuid().nullable().optional(),
   name: z.string().trim().min(2).max(80),
-  phone: z.string().trim().min(6).max(30),
+  // Basic length guard only; strict format checking would reject too many valid Romanian inputs
+  phone: z.string().trim().min(4).max(30),
   email: z.string().trim().email().max(120).optional().or(z.literal("")),
   message: z.string().trim().max(1000).optional().or(z.literal("")),
+  // Honeypot — must always be empty; bots fill it, humans don't see it
+  honeypot: z.string().max(0).optional(),
 });
 
 export const submitLead = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => LeadInput.parse(input))
+  .validator(LeadInput)
   .handler(async ({ data }) => {
+    // Honeypot triggered — silently discard without revealing spam detection
+    if (data.honeypot) return { ok: true };
     const { error } = await supabase.from("leads").insert({
       car_id: data.car_id ?? null,
       name: data.name,
@@ -75,6 +80,21 @@ export const submitLead = createServerFn({ method: "POST" })
   });
 
 // ---------- Admin (requires auth + admin role) ----------
+
+/**
+ * Returns a slug that is unique in the `cars` table.
+ * If `baseSlug` is already taken (by a car other than `excludeId`), appends -2, -3, …
+ */
+async function uniqueSlug(sb: any, baseSlug: string, excludeId?: string): Promise<string> {
+  for (let attempt = 1; attempt <= 20; attempt++) {
+    const slug = attempt === 1 ? baseSlug : `${baseSlug}-${attempt}`;
+    let q = sb.from("cars").select("id").eq("slug", slug);
+    if (excludeId) q = q.neq("id", excludeId);
+    const { data } = await q.maybeSingle();
+    if (!data) return slug;
+  }
+  return `${baseSlug}-${Date.now()}`;
+}
 
 async function assertAdmin(ctx: { supabase: any; userId: string }) {
   const { data, error } = await ctx.supabase.rpc("has_role", {
@@ -98,7 +118,7 @@ export const adminListCars = createServerFn({ method: "GET" })
 
 export const adminGetCar = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((id: string) => id)
+  .validator((id: string) => id)
   .handler(async ({ context, data: id }) => {
     await assertAdmin(context);
     const { data, error } = await context.supabase
@@ -135,12 +155,12 @@ const CarInput = z.object({
 
 export const adminUpsertCar = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => {
-    return z.object({ id: z.string().uuid().optional(), data: CarInput }).parse(input);
-  })
+  .validator(z.object({ id: z.string().uuid().optional(), data: CarInput }))
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
     const { images, ...carFields } = data.data;
+    // Ensure slug is unique before writing
+    carFields.slug = await uniqueSlug(context.supabase, carFields.slug, data.id);
     let carId = data.id;
     if (carId) {
       const { error } = await context.supabase.from("cars").update(carFields).eq("id", carId);
@@ -171,7 +191,7 @@ export const adminUpsertCar = createServerFn({ method: "POST" })
 
 export const adminDeleteCar = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((id: string) => id)
+  .validator((id: string) => id)
   .handler(async ({ context, data: id }) => {
     await assertAdmin(context);
     const { error } = await context.supabase.from("cars").delete().eq("id", id);
@@ -193,7 +213,7 @@ export const adminListLeads = createServerFn({ method: "GET" })
 
 export const adminUpdateLeadStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ id: z.string().uuid(), status: z.enum(["nou", "contactat", "inchis"]) }).parse(input))
+  .validator(z.object({ id: z.string().uuid(), status: z.enum(["nou", "contactat", "inchis"]) }))
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
     const { error } = await context.supabase.from("leads").update({ status: data.status }).eq("id", data.id);

@@ -20,12 +20,16 @@ export function LeadForm({ carId, carTitle }: { carId?: string; carTitle?: strin
           phone: String(fd.get("phone") ?? ""),
           email: String(fd.get("email") ?? ""),
           message: String(fd.get("message") ?? "") || (carTitle ? `Sunt interesat de ${carTitle}` : ""),
+          honeypot: String(fd.get("honeypot") ?? ""),
         },
       });
       setSent(true);
       toast.success("Mesaj trimis! Te contactăm în scurt timp.");
-    } catch (err) {
-      toast.error("A apărut o eroare. Încearcă din nou sau sună-ne direct.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : null;
+      // Show Zod validation messages (e.g. invalid phone) verbatim; fall back to generic text
+      const userMsg = msg && msg.length < 200 ? msg : "A apărut o eroare. Încearcă din nou sau sună-ne direct.";
+      toast.error(userMsg);
     } finally {
       setLoading(false);
     }
@@ -42,6 +46,16 @@ export function LeadForm({ carId, carTitle }: { carId?: string; carTitle?: strin
 
   return (
     <form onSubmit={onSubmit} className="surface-card p-6 space-y-3">
+      {/* Honeypot — hidden from humans; bots fill it and are silently discarded server-side */}
+      <input
+        type="text"
+        name="honeypot"
+        defaultValue=""
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        style={{ position: "absolute", left: "-9999px", width: "1px", height: "1px", opacity: 0 }}
+      />
       <div className="font-display text-lg font-semibold">Trimite o întrebare</div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field name="name" label="Nume" required maxLength={80} />

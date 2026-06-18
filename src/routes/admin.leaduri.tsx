@@ -20,7 +20,7 @@ function LeadsPage() {
   const list = useServerFn(adminListLeads);
   const update = useServerFn(adminUpdateLeadStatus);
   const qc = useQueryClient();
-  const { data: leads = [], isLoading } = useQuery({ queryKey: ["admin", "leads"], queryFn: () => list() });
+  const { data: leads = [], isLoading, isError, error } = useQuery({ queryKey: ["admin", "leads"], queryFn: () => list() });
 
   async function setStatus(id: string, status: "nou" | "contactat" | "inchis") {
     try {
@@ -39,6 +39,13 @@ function LeadsPage() {
 
       <div className="mt-6 grid gap-4">
         {isLoading ? <div className="text-sm text-muted-foreground">Se încarcă...</div>
+          : isError ? (
+            <div className="surface-card p-6 border border-destructive/40 rounded-xl">
+              <p className="text-sm font-medium text-destructive">Eroare la încărcarea leadurilor</p>
+              <p className="mt-1 text-xs text-muted-foreground font-mono">{(error as Error)?.message ?? "Eroare necunoscută"}</p>
+              <p className="mt-2 text-xs text-muted-foreground">Verifică că variabilele de mediu <code>SUPABASE_URL</code> și <code>SUPABASE_PUBLISHABLE_KEY</code> sunt setate corect.</p>
+            </div>
+          )
           : leads.length === 0 ? <div className="surface-card p-8 text-center text-muted-foreground text-sm">Niciun lead încă.</div>
           : leads.map((l) => (
             <div key={l.id} className="surface-card p-5">

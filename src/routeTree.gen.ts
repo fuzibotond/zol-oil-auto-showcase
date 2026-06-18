@@ -15,6 +15,7 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as MasiniIndexRouteImport } from './routes/masini.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as MasiniSlugRouteImport } from './routes/masini.$slug'
 import { Route as AdminMasiniRouteImport } from './routes/admin.masini'
@@ -52,6 +53,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const MasiniIndexRoute = MasiniIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => MasiniRoute,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/admin/masini': typeof AdminMasiniRouteWithChildren
   '/masini/$slug': typeof MasiniSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/masini/': typeof MasiniIndexRoute
   '/admin/masini/nou': typeof AdminMasiniNouRoute
   '/admin/masini/': typeof AdminMasiniIndexRoute
   '/admin/masini/$id/edit': typeof AdminMasiniIdEditRoute
@@ -108,11 +115,11 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
-  '/masini': typeof MasiniRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/leaduri': typeof AdminLeaduriRoute
   '/masini/$slug': typeof MasiniSlugRoute
   '/admin': typeof AdminIndexRoute
+  '/masini': typeof MasiniIndexRoute
   '/admin/masini/nou': typeof AdminMasiniNouRoute
   '/admin/masini': typeof AdminMasiniIndexRoute
   '/admin/masini/$id/edit': typeof AdminMasiniIdEditRoute
@@ -129,6 +136,7 @@ export interface FileRoutesById {
   '/admin/masini': typeof AdminMasiniRouteWithChildren
   '/masini/$slug': typeof MasiniSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/masini/': typeof MasiniIndexRoute
   '/admin/masini/nou': typeof AdminMasiniNouRoute
   '/admin/masini/': typeof AdminMasiniIndexRoute
   '/admin/masini/$id/edit': typeof AdminMasiniIdEditRoute
@@ -146,6 +154,7 @@ export interface FileRouteTypes {
     | '/admin/masini'
     | '/masini/$slug'
     | '/admin/'
+    | '/masini/'
     | '/admin/masini/nou'
     | '/admin/masini/'
     | '/admin/masini/$id/edit'
@@ -154,11 +163,11 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/contact'
-    | '/masini'
     | '/sitemap.xml'
     | '/admin/leaduri'
     | '/masini/$slug'
     | '/admin'
+    | '/masini'
     | '/admin/masini/nou'
     | '/admin/masini'
     | '/admin/masini/$id/edit'
@@ -174,6 +183,7 @@ export interface FileRouteTypes {
     | '/admin/masini'
     | '/masini/$slug'
     | '/admin/'
+    | '/masini/'
     | '/admin/masini/nou'
     | '/admin/masini/'
     | '/admin/masini/$id/edit'
@@ -231,6 +241,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/masini/': {
+      id: '/masini/'
+      path: '/'
+      fullPath: '/masini/'
+      preLoaderRoute: typeof MasiniIndexRouteImport
+      parentRoute: typeof MasiniRoute
     }
     '/admin/': {
       id: '/admin/'
@@ -316,10 +333,12 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface MasiniRouteChildren {
   MasiniSlugRoute: typeof MasiniSlugRoute
+  MasiniIndexRoute: typeof MasiniIndexRoute
 }
 
 const MasiniRouteChildren: MasiniRouteChildren = {
   MasiniSlugRoute: MasiniSlugRoute,
+  MasiniIndexRoute: MasiniIndexRoute,
 }
 
 const MasiniRouteWithChildren =
@@ -336,3 +355,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

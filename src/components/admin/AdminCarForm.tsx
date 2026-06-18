@@ -80,7 +80,7 @@ export function AdminCarForm({ initial }: Props) {
         mileage: Number(form.mileage),
         engine_size: form.engine_size ? Number(form.engine_size) : null,
         power: form.power ? Number(form.power) : null,
-        equipment: form.equipment.split("\n").map((s) => s.trim()).filter(Boolean),
+        equipment: form.equipment.split(/\r?\n/).map((s) => s.trim()).filter(Boolean),
         version: form.version || null,
         body_type: form.body_type || null,
         color: form.color || null,
