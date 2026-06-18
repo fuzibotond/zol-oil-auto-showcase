@@ -2,8 +2,8 @@
 # Copy this file to .dev.vars and fill in real values.
 # .dev.vars is gitignored — NEVER commit it.
 
-SUPABASE_URL=https://knatquhcztmnhbxlierh.supabase.co
+SUPABASE_URL=https://YOUR_PROJECT.supabase.co
 SUPABASE_PUBLISHABLE_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 RESEND_API_KEY=
-NOTIFY_EMAIL=contact@zol-oil.ro
+NOTIFY_EMAIL=contact@your-domain.com

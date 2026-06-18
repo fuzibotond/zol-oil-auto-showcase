@@ -2,6 +2,8 @@
 .env
 .env.*
 !.env.example
+!.env.main.example
+!.env.develop.example
 
 # Logs
 logs
