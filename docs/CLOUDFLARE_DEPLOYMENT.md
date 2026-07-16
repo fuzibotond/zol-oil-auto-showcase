@@ -16,6 +16,24 @@
 
 ---
 
+## Step 0 — No custom domain yet? Use `*.pages.dev`
+
+You do **not** need to own a production domain to deploy or to gate admin.
+
+- Cloudflare Pages auto-assigns **`<your-project>.pages.dev`** — treat that as your
+  production URL for now.
+- Cloudflare Access works on `.pages.dev`, so in Step 1 set the Access application
+  **domain to `<your-project>.pages.dev`** and path `/admin`.
+- Set `VITE_SITE_URL=https://<your-project>.pages.dev` in the Pages env vars so
+  sitemap/SEO canonical links are valid.
+- Do **not** use the Pages "protect entire project with Access" toggle — that would
+  lock the *public* site. Use the path-scoped self-hosted Access app (Step 1).
+- When you later buy a domain: add it as a **Custom domain** in the Pages project,
+  then update the Access app domain, `VITE_SITE_URL`, and (in the R2 phase) the image
+  domain. No code changes — config only.
+- Preview deploys get `<hash>.<your-project>.pages.dev`; to reach admin there too,
+  point the Access app at the wildcard `*.<your-project>.pages.dev`.
+
 ## Step 1 — Create the Cloudflare Access application (you)
 
 1. Cloudflare dashboard → **Zero Trust** → **Access** → **Applications** → **Add an application** → **Self-hosted**.
