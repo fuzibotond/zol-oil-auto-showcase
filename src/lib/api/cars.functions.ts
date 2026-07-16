@@ -84,7 +84,13 @@ export const submitLead = createServerFn({ method: "POST" })
 // ---------- Admin (behind Cloudflare Access + ADMIN_EMAILS allowlist) ----------
 
 const ImageInput = z.object({
-  url: z.string().url().max(1000),
+  // Accept absolute http(s) URLs (external / R2 custom domain) AND root-relative
+  // paths like /img/<key> that the same-origin R2 delivery route returns.
+  url: z
+    .string()
+    .min(1)
+    .max(1000)
+    .refine((v) => v.startsWith("/") || /^https?:\/\//i.test(v), "URL invalid"),
   alt_text: z.string().max(160).optional().nullable(),
   r2_key: z.string().max(300).optional().nullable(),
 });
