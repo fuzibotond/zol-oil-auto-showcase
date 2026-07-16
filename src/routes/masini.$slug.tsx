@@ -3,9 +3,22 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import {
-  ArrowLeft, Calendar, Cog, Fuel, Gauge, Palette, Zap,
-  Car as CarIcon, Share2, ChevronLeft, ChevronRight,
-  CheckCircle2, Phone, MessageCircle, Send, ExternalLink,
+  ArrowLeft,
+  Calendar,
+  Cog,
+  Fuel,
+  Gauge,
+  Palette,
+  Zap,
+  Car as CarIcon,
+  Share2,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle2,
+  Phone,
+  MessageCircle,
+  Send,
+  ExternalLink,
 } from "lucide-react";
 import { getCarBySlug, similarCars } from "@/lib/api/cars.functions";
 import { fmtKm, fmtPrice, fmtNumber } from "@/lib/format";
@@ -15,7 +28,8 @@ import { LeadForm } from "@/components/site/LeadForm";
 import { CarCard } from "@/components/site/CarCard";
 import { useSiteSettings } from "@/hooks/use-site-settings";
 
-const PLACEHOLDER = "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1600&q=80&auto=format&fit=crop";
+const PLACEHOLDER =
+  "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1600&q=80&auto=format&fit=crop";
 
 export const Route = createFileRoute("/masini/$slug")({
   loader: async ({ params }) => {
@@ -38,7 +52,12 @@ export const Route = createFileRoute("/masini/$slug")({
         { property: "og:description", content: desc },
         { property: "og:type", content: "product" },
         { property: "og:url", content: ogUrl },
-        ...(img ? [{ property: "og:image", content: img }, { name: "twitter:image", content: img }] : []),
+        ...(img
+          ? [
+              { property: "og:image", content: img },
+              { name: "twitter:image", content: img },
+            ]
+          : []),
       ],
       links: [{ rel: "canonical", href: ogUrl }],
     };
@@ -58,16 +77,37 @@ function CarDetail() {
     queryFn: () => fetchSimilar({ data: { excludeId: car.id, brand: car.brand } }),
   });
 
-  const images = car.images && car.images.length ? car.images : [{ id: "p", url: PLACEHOLDER, alt_text: null, sort_order: 0, car_id: car.id }];
+  const images =
+    car.images && car.images.length
+      ? car.images
+      : [{ id: "p", url: PLACEHOLDER, alt_text: null, sort_order: 0, car_id: car.id }];
   const [idx, setIdx] = useState(0);
   const [tab, setTab] = useState<Tab>("specs");
   const title = `${car.brand} ${car.model}`;
-  const waMsg = encodeURIComponent(`Bună ziua, sunt interesat de ${title} (${car.year}) — ${SITE.city}`);
+  // Pre-fill WhatsApp with the car's details so the customer only has to extend it.
+  const carBase = (import.meta.env.VITE_SITE_URL ?? "").replace(/\/$/, "");
+  const carUrl = carBase ? `${carBase}/masini/${car.slug}` : "";
+  const waMsg = encodeURIComponent(
+    [
+      `Bună ziua! Sunt interesat de ${title}${car.version ? " " + car.version : ""} (${car.year}).`,
+      ``,
+      `Preț: ${fmtPrice(car.price, car.currency)}`,
+      `Kilometraj: ${fmtKm(car.mileage)}`,
+      `Combustibil: ${car.fuel_type} · ${car.transmission}`,
+      carUrl ? `Link: ${carUrl}` : "",
+      ``,
+      `Aș dori mai multe detalii.`,
+    ]
+      .filter((line, i, arr) => !(line === "" && arr[i - 1] === ""))
+      .join("\n"),
+  );
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "specs", label: "Specificații" },
     ...(car.description ? [{ id: "descriere" as Tab, label: "Descriere" }] : []),
-    ...(car.equipment?.length ? [{ id: "dotari" as Tab, label: `Dotări (${car.equipment.length})` }] : []),
+    ...(car.equipment?.length
+      ? [{ id: "dotari" as Tab, label: `Dotări (${car.equipment.length})` }]
+      : []),
   ];
 
   function share() {
@@ -83,7 +123,10 @@ function CarDetail() {
       {/* ── Hero band ── */}
       <div className="bg-secondary/60 border-b border-border">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
-          <Link to="/masini" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <Link
+            to="/masini"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
             <ArrowLeft className="h-4 w-4" /> Înapoi la mașini
           </Link>
           <button
@@ -98,10 +141,8 @@ function CarDetail() {
       {/* ── Main content ── */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
         <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
-
           {/* LEFT COLUMN */}
           <div className="space-y-6">
-
             {/* Title block */}
             <div>
               <div className="flex flex-wrap items-center gap-2">
@@ -112,7 +153,9 @@ function CarDetail() {
                   </span>
                 )}
               </div>
-              <h1 className="mt-3 font-display text-4xl font-bold tracking-tight sm:text-5xl">{title}</h1>
+              <h1 className="mt-3 font-display text-4xl font-bold tracking-tight sm:text-5xl">
+                {title}
+              </h1>
               {car.version && <p className="mt-1 text-base text-muted-foreground">{car.version}</p>}
 
               {/* Quick-glance chips */}
@@ -121,8 +164,12 @@ function CarDetail() {
                 <Chip icon={<Gauge className="h-3.5 w-3.5" />} label={fmtKm(car.mileage)} />
                 <Chip icon={<Fuel className="h-3.5 w-3.5" />} label={car.fuel_type} />
                 <Chip icon={<Cog className="h-3.5 w-3.5" />} label={car.transmission} />
-                {car.power && <Chip icon={<Zap className="h-3.5 w-3.5" />} label={`${car.power} CP`} />}
-                {car.body_type && <Chip icon={<CarIcon className="h-3.5 w-3.5" />} label={car.body_type} />}
+                {car.power && (
+                  <Chip icon={<Zap className="h-3.5 w-3.5" />} label={`${car.power} CP`} />
+                )}
+                {car.body_type && (
+                  <Chip icon={<CarIcon className="h-3.5 w-3.5" />} label={car.body_type} />
+                )}
               </div>
             </div>
 
@@ -161,10 +208,16 @@ function CarDetail() {
                       key={img.id}
                       onClick={() => setIdx(i)}
                       className={`relative h-16 w-24 flex-shrink-0 overflow-hidden rounded-xl border-2 transition-all ${
-                        i === idx ? "border-accent shadow-sm" : "border-transparent opacity-60 hover:opacity-100"
+                        i === idx
+                          ? "border-accent shadow-sm"
+                          : "border-transparent opacity-60 hover:opacity-100"
                       }`}
                     >
-                      <img src={img.url} alt={img.alt_text ?? ""} className="h-full w-full object-cover" />
+                      <img
+                        src={img.url}
+                        alt={img.alt_text ?? ""}
+                        className="h-full w-full object-cover"
+                      />
                     </button>
                   ))}
                 </div>
@@ -194,14 +247,54 @@ function CarDetail() {
             {tab === "specs" && (
               <div className="surface-card p-6">
                 <div className="grid grid-cols-2 gap-x-8 gap-y-5 sm:grid-cols-4">
-                  <SpecBlock icon={<Calendar className="h-4 w-4" />} label="An fabricație" value={String(car.year)} />
-                  <SpecBlock icon={<Gauge className="h-4 w-4" />} label="Kilometraj" value={fmtKm(car.mileage)} />
-                  <SpecBlock icon={<Fuel className="h-4 w-4" />} label="Combustibil" value={car.fuel_type} />
-                  <SpecBlock icon={<Cog className="h-4 w-4" />} label="Transmisie" value={car.transmission} />
-                  {car.engine_size ? <SpecBlock icon={<CarIcon className="h-4 w-4" />} label="Capacitate" value={`${fmtNumber(car.engine_size)} cm³`} /> : null}
-                  {car.power ? <SpecBlock icon={<Zap className="h-4 w-4" />} label="Putere" value={`${car.power} CP`} /> : null}
-                  {car.body_type ? <SpecBlock icon={<CarIcon className="h-4 w-4" />} label="Caroserie" value={car.body_type} /> : null}
-                  {car.color ? <SpecBlock icon={<Palette className="h-4 w-4" />} label="Culoare" value={car.color} /> : null}
+                  <SpecBlock
+                    icon={<Calendar className="h-4 w-4" />}
+                    label="An fabricație"
+                    value={String(car.year)}
+                  />
+                  <SpecBlock
+                    icon={<Gauge className="h-4 w-4" />}
+                    label="Kilometraj"
+                    value={fmtKm(car.mileage)}
+                  />
+                  <SpecBlock
+                    icon={<Fuel className="h-4 w-4" />}
+                    label="Combustibil"
+                    value={car.fuel_type}
+                  />
+                  <SpecBlock
+                    icon={<Cog className="h-4 w-4" />}
+                    label="Transmisie"
+                    value={car.transmission}
+                  />
+                  {car.engine_size ? (
+                    <SpecBlock
+                      icon={<CarIcon className="h-4 w-4" />}
+                      label="Capacitate"
+                      value={`${fmtNumber(car.engine_size)} cm³`}
+                    />
+                  ) : null}
+                  {car.power ? (
+                    <SpecBlock
+                      icon={<Zap className="h-4 w-4" />}
+                      label="Putere"
+                      value={`${car.power} CP`}
+                    />
+                  ) : null}
+                  {car.body_type ? (
+                    <SpecBlock
+                      icon={<CarIcon className="h-4 w-4" />}
+                      label="Caroserie"
+                      value={car.body_type}
+                    />
+                  ) : null}
+                  {car.color ? (
+                    <SpecBlock
+                      icon={<Palette className="h-4 w-4" />}
+                      label="Culoare"
+                      value={car.color}
+                    />
+                  ) : null}
                 </div>
               </div>
             )}
@@ -209,7 +302,9 @@ function CarDetail() {
             {/* Tab: Descriere */}
             {tab === "descriere" && car.description && (
               <div className="surface-card p-6">
-                <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-line">{car.description}</p>
+                <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-line">
+                  {car.description}
+                </p>
               </div>
             )}
 
@@ -233,7 +328,9 @@ function CarDetail() {
             {/* Price card */}
             <div className="surface-card overflow-hidden">
               <div className="bg-secondary/50 px-6 py-4 border-b border-border">
-                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Preț de vânzare</div>
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Preț de vânzare
+                </div>
                 <div className="mt-1 font-display text-4xl font-bold tracking-tight">
                   {fmtPrice(car.price, car.currency)}
                 </div>
@@ -281,7 +378,9 @@ function CarDetail() {
 
             {/* Quick info card */}
             <div className="surface-card p-5 space-y-3">
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Locație</div>
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Locație
+              </div>
               <div className="flex items-start gap-3">
                 <div className="h-8 w-8 flex-shrink-0 rounded-xl bg-accent/10 flex items-center justify-center text-accent">
                   <CarIcon className="h-4 w-4" />
@@ -291,14 +390,28 @@ function CarDetail() {
                   <div className="text-muted-foreground">{SITE.address}</div>
                 </div>
               </div>
-              <a
-                href={SITE.mapsDirections}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex text-xs font-medium text-accent hover:underline"
-              >
-                Deschide în Google Maps →
-              </a>
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                {(settings.maps_url || SITE.mapsDirections) && (
+                  <a
+                    href={settings.maps_url || SITE.mapsDirections}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex text-xs font-medium text-accent hover:underline"
+                  >
+                    Deschide în Google Maps →
+                  </a>
+                )}
+                {settings.waze_url && (
+                  <a
+                    href={settings.waze_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex text-xs font-medium text-accent hover:underline"
+                  >
+                    Deschide în Waze →
+                  </a>
+                )}
+              </div>
             </div>
           </aside>
         </div>
@@ -308,15 +421,24 @@ function CarDetail() {
           <section className="mt-16">
             <div className="flex items-end justify-between gap-4 mb-6">
               <div>
-                <div className="text-xs font-medium text-accent uppercase tracking-wider">Alte opțiuni</div>
-                <h2 className="mt-1 font-display text-2xl font-bold tracking-tight">Mașini similare</h2>
+                <div className="text-xs font-medium text-accent uppercase tracking-wider">
+                  Alte opțiuni
+                </div>
+                <h2 className="mt-1 font-display text-2xl font-bold tracking-tight">
+                  Mașini similare
+                </h2>
               </div>
-              <Link to="/masini" className="hidden sm:inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+              <Link
+                to="/masini"
+                className="hidden sm:inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+              >
                 Vezi toate →
               </Link>
             </div>
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {similar.map((c) => <CarCard key={c.id} car={c} />)}
+              {similar.map((c) => (
+                <CarCard key={c.id} car={c} />
+              ))}
             </div>
           </section>
         )}
@@ -326,11 +448,27 @@ function CarDetail() {
       <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border bg-background/95 backdrop-blur-md p-3 md:hidden">
         <div className="mx-auto max-w-7xl flex items-center gap-3">
           <div className="flex-1 min-w-0">
-            <div className="text-[11px] text-muted-foreground truncate">{title} · {car.year}</div>
-            <div className="font-display text-lg font-bold leading-tight">{fmtPrice(car.price, car.currency)}</div>
+            <div className="text-[11px] text-muted-foreground truncate">
+              {title} · {car.year}
+            </div>
+            <div className="font-display text-lg font-bold leading-tight">
+              {fmtPrice(car.price, car.currency)}
+            </div>
           </div>
-          <a href={`tel:${settings.phone}`} className="rounded-xl bg-foreground px-4 py-2.5 text-sm font-medium text-background whitespace-nowrap">Sună</a>
-          <a href={`https://wa.me/${settings.whatsapp}?text=${waMsg}`} target="_blank" rel="noreferrer" className="rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground whitespace-nowrap">WhatsApp</a>
+          <a
+            href={`tel:${settings.phone}`}
+            className="rounded-xl bg-foreground px-4 py-2.5 text-sm font-medium text-background whitespace-nowrap"
+          >
+            Sună
+          </a>
+          <a
+            href={`https://wa.me/${settings.whatsapp}?text=${waMsg}`}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground whitespace-nowrap"
+          >
+            WhatsApp
+          </a>
         </div>
       </div>
     </div>
@@ -345,10 +483,20 @@ function Chip({ icon, label }: { icon: React.ReactNode; label: string }) {
   );
 }
 
-function SpecBlock({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function SpecBlock({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) {
   return (
     <div>
-      <div className="inline-flex items-center gap-1.5 text-xs text-muted-foreground mb-1">{icon} {label}</div>
+      <div className="inline-flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+        {icon} {label}
+      </div>
       <div className="font-semibold text-sm">{value}</div>
     </div>
   );

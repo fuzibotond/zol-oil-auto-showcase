@@ -5,15 +5,8 @@ import { useEffect, useState } from "react";
 import { Plus, Trash2, Save } from "lucide-react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
-import {
-  adminUpdateSiteSettings,
-  getSiteSettings,
-} from "@/lib/api/site-settings.functions";
-import {
-  SOCIAL_PLATFORM_META,
-  type SiteOpeningHour,
-  type SiteSettingsInput,
-} from "@/lib/site";
+import { adminUpdateSiteSettings, getSiteSettings } from "@/lib/api/site-settings.functions";
+import { SOCIAL_PLATFORM_META, type SiteOpeningHour, type SiteSettingsInput } from "@/lib/site";
 
 export const Route = createFileRoute("/admin/setari")({
   component: AdminSettingsPage,
@@ -45,7 +38,9 @@ function AdminSettingsPage() {
       if (!prev) return prev;
       return {
         ...prev,
-        opening_hours: prev.opening_hours.map((item, i) => (i === index ? { ...item, ...patch } : item)),
+        opening_hours: prev.opening_hours.map((item, i) =>
+          i === index ? { ...item, ...patch } : item,
+        ),
       };
     });
   }
@@ -76,7 +71,9 @@ function AdminSettingsPage() {
       if (!prev) return prev;
       return {
         ...prev,
-        social_links: prev.social_links.map((item, i) => (i === index ? { ...item, ...patch } : item)),
+        social_links: prev.social_links.map((item, i) =>
+          i === index ? { ...item, ...patch } : item,
+        ),
       };
     });
   }
@@ -122,7 +119,8 @@ function AdminSettingsPage() {
     <div className="p-6 md:p-10 max-w-4xl">
       <h1 className="font-display text-3xl font-bold tracking-tight">Setări site</h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        Actualizează rapid datele de contact, programul și link-urile social media fără modificări în cod.
+        Actualizează rapid datele de contact, programul și link-urile social media fără modificări
+        în cod.
       </p>
 
       <form onSubmit={onSave} className="mt-8 space-y-6">
@@ -169,12 +167,44 @@ function AdminSettingsPage() {
         </section>
 
         <section className="surface-card p-6">
+          <div className="font-display text-lg font-semibold">Locație (hărți)</div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Link-uri către locația parcului auto. Apar la pagina mașinii și în footer. Lasă gol
+            pentru a ascunde.
+          </p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <Field label="Link Google Maps">
+              <input
+                className={inputCls}
+                value={form.maps_url}
+                onChange={(e) => setForm({ ...form, maps_url: e.target.value })}
+                placeholder="https://maps.google.com/..."
+              />
+            </Field>
+            <Field label="Link Waze">
+              <input
+                className={inputCls}
+                value={form.waze_url}
+                onChange={(e) => setForm({ ...form, waze_url: e.target.value })}
+                placeholder="https://waze.com/ul?q=..."
+              />
+            </Field>
+          </div>
+        </section>
+
+        <section className="surface-card p-6">
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="font-display text-lg font-semibold">Program</div>
-              <p className="mt-1 text-xs text-muted-foreground">Exemplu: Luni - Vineri / 09:00 - 18:00</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Exemplu: Luni - Vineri / 09:00 - 18:00
+              </p>
             </div>
-            <button type="button" onClick={addHour} className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm hover:bg-secondary">
+            <button
+              type="button"
+              onClick={addHour}
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm hover:bg-secondary"
+            >
               <Plus className="h-4 w-4" /> Interval
             </button>
           </div>
@@ -215,9 +245,14 @@ function AdminSettingsPage() {
 
           <div className="mt-4 space-y-3">
             {form.social_links.map((social, index) => (
-              <div key={social.key} className="grid items-center gap-3 rounded-xl border border-border p-3 sm:grid-cols-[170px_1fr_auto]">
+              <div
+                key={social.key}
+                className="grid items-center gap-3 rounded-xl border border-border p-3 sm:grid-cols-[170px_1fr_auto]"
+              >
                 <div className="flex items-center justify-between gap-2 sm:block">
-                  <div className="text-sm font-medium">{SOCIAL_PLATFORM_META[social.key].label}</div>
+                  <div className="text-sm font-medium">
+                    {SOCIAL_PLATFORM_META[social.key].label}
+                  </div>
                   <div className="text-xs text-muted-foreground sm:mt-0.5">Afișează pe site</div>
                 </div>
                 <input
@@ -238,7 +273,11 @@ function AdminSettingsPage() {
         </section>
 
         <div className="flex justify-end">
-          <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-foreground px-5 py-2.5 text-sm font-medium text-background disabled:opacity-60">
+          <button
+            type="submit"
+            disabled={saving}
+            className="inline-flex items-center gap-2 rounded-xl bg-foreground px-5 py-2.5 text-sm font-medium text-background disabled:opacity-60"
+          >
             <Save className="h-4 w-4" /> {saving ? "Se salvează..." : "Salvează setările"}
           </button>
         </div>

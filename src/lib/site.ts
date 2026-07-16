@@ -18,13 +18,19 @@ export const SITE = {
     { day: "Sâmbătă", value: "10:00 – 14:00" },
     { day: "Duminică", value: "Închis" },
   ],
-  mapsEmbed:
-    "https://www.google.com/maps?q=Cernat,+Covasna,+Romania&output=embed",
+  mapsEmbed: "https://www.google.com/maps?q=Cernat,+Covasna,+Romania&output=embed",
   mapsDirections: "https://share.google/9gfGgLgT7AKrY7Ngt",
   waze: "https://waze.com/ul?q=Cernat%20Covasna",
 };
 
-export type SocialPlatform = "facebook" | "messenger" | "instagram" | "tiktok" | "youtube" | "autovit" | "olx";
+export type SocialPlatform =
+  | "facebook"
+  | "messenger"
+  | "instagram"
+  | "tiktok"
+  | "youtube"
+  | "autovit"
+  | "olx";
 
 export interface SiteOpeningHour {
   day: string;
@@ -43,6 +49,8 @@ export interface SiteSettingsInput {
   phone: string;
   phone_display: string;
   whatsapp: string;
+  maps_url: string;
+  waze_url: string;
   opening_hours: SiteOpeningHour[];
   social_links: SiteSocialLink[];
 }
@@ -62,6 +70,8 @@ export const SITE_SETTINGS_FALLBACK: SiteSettingsInput = {
   phone: SITE.phone,
   phone_display: SITE.phoneDisplay,
   whatsapp: SITE.whatsapp,
+  maps_url: SITE.mapsDirections,
+  waze_url: SITE.waze,
   opening_hours: SITE.hours,
   social_links: [
     { key: "facebook", label: "Facebook", url: SITE.facebook, enabled: true },
@@ -76,7 +86,15 @@ export const SITE_SETTINGS_FALLBACK: SiteSettingsInput = {
 
 export const FUEL_TYPES = ["Benzină", "Diesel", "Hibrid", "Electric", "GPL"] as const;
 export const TRANSMISSIONS = ["Manuală", "Automată"] as const;
-export const BODY_TYPES = ["Berlină", "Break", "SUV", "Hatchback", "Coupe", "Cabrio", "Monovolum"] as const;
+export const BODY_TYPES = [
+  "Berlină",
+  "Break",
+  "SUV",
+  "Hatchback",
+  "Coupe",
+  "Cabrio",
+  "Monovolum",
+] as const;
 export const STATUSES = ["disponibil", "rezervat", "vandut", "nou-sosit", "in-curand"] as const;
 
 export const STATUS_LABEL: Record<string, string> = {
