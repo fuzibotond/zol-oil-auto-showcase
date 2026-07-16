@@ -1,6 +1,7 @@
 import { createStart, createMiddleware, createCsrfMiddleware } from "@tanstack/react-start";
 
 import { renderErrorPage } from "./lib/error-page";
+import { bindCloudflareEnv } from "@/lib/db/bind-env";
 
 // Admin auth is handled by Cloudflare Access (JWT in the CF_Authorization cookie /
 // Cf-Access-Jwt-Assertion header), verified server-side in `requireAdmin`. No
@@ -26,5 +27,5 @@ const errorMiddleware = createMiddleware().server(async ({ next }) => {
 });
 
 export const startInstance = createStart(() => ({
-  requestMiddleware: [csrfMiddleware, errorMiddleware],
+  requestMiddleware: [bindCloudflareEnv, csrfMiddleware, errorMiddleware],
 }));

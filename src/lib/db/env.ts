@@ -42,6 +42,19 @@ export function hasCloudflareEnv(): boolean {
   return Boolean((globalThis as { __env__?: CloudflareEnv }).__env__?.DB);
 }
 
+/**
+ * Lift Cloudflare bindings from a srvx request (`request.runtime.cloudflare.env`)
+ * onto globalThis.__env__ if not already set. Call at the top of server-route
+ * handlers, which run outside the server-function middleware chain.
+ */
+export function adoptRequestEnv(request: unknown): void {
+  const g = globalThis as { __env__?: CloudflareEnv };
+  if (g.__env__?.DB || g.__env__?.R2) return;
+  const env = (request as { runtime?: { cloudflare?: { env?: CloudflareEnv } } })?.runtime
+    ?.cloudflare?.env;
+  if (env) g.__env__ = env;
+}
+
 export function getDB(): D1Database {
   const { DB } = getCloudflareEnv();
   if (!DB) throw new Error("D1 binding `DB` is not configured — add it to wrangler.toml.");

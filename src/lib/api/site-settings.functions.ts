@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { supabase } from "@/integrations/supabase/client";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import {
   SITE_SETTINGS_FALLBACK,
@@ -33,11 +32,6 @@ const SettingsInputSchema = z.object({
   opening_hours: z.array(OpeningHourSchema).max(14),
   social_links: z.array(SocialLinkSchema),
 });
-
-function isMissingSiteSettingsTableError(error: any): boolean {
-  const msg = String(error?.message ?? "");
-  return error?.code === "PGRST205" || msg.includes("public.site_settings");
-}
 
 function normalizeHours(input: unknown): SiteOpeningHour[] {
   if (!Array.isArray(input)) return SITE_SETTINGS_FALLBACK.opening_hours;
@@ -83,42 +77,22 @@ function normalizeSettings(input?: Partial<SiteSettingsInput> | null): SiteSetti
 }
 
 export const getSiteSettings = createServerFn({ method: "GET" }).handler(async () => {
-  const { data, error } = await supabase
-    .from("site_settings")
-    .select("contact_email, phone, phone_display, whatsapp, opening_hours, social_links")
-    .eq("id", "default")
-    .maybeSingle();
-
-  // Until the DB migration is applied, keep the site usable with local fallback values.
-  if (error) {
-    if (isMissingSiteSettingsTableError(error)) return { ...SITE_SETTINGS_FALLBACK };
-    throw new Error(error.message);
+  // Keep the public site usable even before D1 is provisioned: fall back to local defaults.
+  try {
+    const repo = await import("@/lib/db/repository");
+    const row = await repo.getSiteSettingsRow();
+    return normalizeSettings(row);
+  } catch {
+    return { ...SITE_SETTINGS_FALLBACK };
   }
-
-  return normalizeSettings((data as Partial<SiteSettingsInput> | null) ?? null);
 });
 
 export const adminUpdateSiteSettings = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .validator(SettingsInputSchema)
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
     const sanitized = normalizeSettings(data);
-    // opening_hours / social_links are JSONB columns; the generated Supabase types
-    // model them as `Json`, so cast the structured payload through unknown.
-    const upsertPayload = { id: "default", ...sanitized } as unknown as Record<string, unknown>;
-    const { data: row, error } = await supabaseAdmin
-      .from("site_settings")
-      .upsert(upsertPayload as never, { onConflict: "id" })
-      .select("contact_email, phone, phone_display, whatsapp, opening_hours, social_links")
-      .single();
-
-    if (error) {
-      if (isMissingSiteSettingsTableError(error)) {
-        throw new Error("Lipsește tabela public.site_settings. Rulează migrarea Supabase și încearcă din nou.");
-      }
-      throw new Error(error.message);
-    }
-    return normalizeSettings(row as unknown as Partial<SiteSettingsInput>);
+    const repo = await import("@/lib/db/repository");
+    await repo.upsertSiteSettings(sanitized);
+    return sanitized;
   });

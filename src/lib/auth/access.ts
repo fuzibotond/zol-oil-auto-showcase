@@ -121,6 +121,19 @@ export function extractAccessToken(request: Request | undefined): string | null 
   return null;
 }
 
+/**
+ * Assert the request is from an allowlisted admin (for server-ROUTE handlers,
+ * which don't use the `requireAdmin` server-fn middleware). Returns the email
+ * or throws.
+ */
+export async function assertAdminRequest(request: Request | undefined): Promise<string> {
+  const token = extractAccessToken(request);
+  if (!token) throw new Error("Unauthorized");
+  const identity = await verifyAccessToken(token);
+  if (!isAllowlistedAdmin(identity.email)) throw new Error("Forbidden");
+  return identity.email;
+}
+
 /** Comma-separated ADMIN_EMAILS allowlist (defense-in-depth over the Access policy). */
 export function isAllowlistedAdmin(email: string): boolean {
   const raw = getEnvVar("ADMIN_EMAILS");

@@ -1,10 +1,12 @@
 # Cloudflare configuration for ZOL-OIL (Cloudflare Pages, nitro "cloudflare-pages").
 #
-# The D1 + R2 bindings are intentionally NOT declared yet: the app currently uses
-# Supabase for data/images, and Cloudflare rejects a deploy that binds a D1
-# database with a placeholder/invalid UUID. They will be added in the D1/R2 phase
-# AFTER the resources are created — see docs/CLOUDFLARE_DEPLOYMENT.md and
-# docs/CLOUDFLARE_MIGRATION_PLAN.md.
+# The app now runs on Cloudflare D1 (data) + R2 (images) — these bindings are
+# REQUIRED. They stay commented ONLY because a placeholder database_id makes the
+# Pages deploy fail (Error 8000022). To go live:
+#   1. wrangler d1 create zol-oil        → paste the returned UUID below
+#   2. wrangler r2 bucket create zol-oil-images
+#   3. uncomment the blocks below, then deploy
+# See docs/CLOUDFLARE_DEPLOYMENT.md for the full sequence (incl. migrations + data import).
 
 name = "zol-oil"
 compatibility_date = "2026-07-01"
@@ -12,7 +14,7 @@ compatibility_flags = ["nodejs_compat"]
 
 pages_build_output_dir = "dist"
 
-# ── ENABLE IN THE D1/R2 PHASE (after `wrangler d1 create` / `r2 bucket create`) ──
+# ── REQUIRED — uncomment after creating the resources ───────────────────────────
 # [[d1_databases]]
 # binding = "DB"
 # database_name = "zol-oil"
@@ -25,6 +27,7 @@ pages_build_output_dir = "dist"
 #
 # [vars]
 # # Custom image-delivery base URL (attach a custom domain to the bucket; no r2.dev in prod).
+# # If omitted, images are served same-origin via the /img/<key> route.
 # R2_PUBLIC_BASE_URL = "https://img.zol-oil.ro"
 
 # Secrets/vars (RESEND_API_KEY, NOTIFY_EMAIL, ACCESS_TEAM_DOMAIN, ACCESS_AUD,

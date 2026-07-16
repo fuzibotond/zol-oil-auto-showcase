@@ -1,52 +1,33 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { supabase } from "@/integrations/supabase/client";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import type { Car, CarImage, Lead } from "@/lib/types";
+import type { Car, Lead } from "@/lib/types";
+
+// All data access goes through the Cloudflare D1 repository (lazy-imported inside
+// handlers so it never reaches the client bundle). Authorization for admin
+// functions is enforced by `requireAdmin` (Cloudflare Access JWT + allowlist).
 
 // ---------- Public reads ----------
 
 export const listCars = createServerFn({ method: "GET" })
   .validator((input: { featured?: boolean; limit?: number } | undefined) => input ?? {})
   .handler(async ({ data }) => {
-    let q = supabase
-      .from("cars")
-      .select("*, images:car_images(id, car_id, url, alt_text, sort_order)")
-      .order("is_featured", { ascending: false })
-      .order("created_at", { ascending: false });
-    if (data.featured) q = q.eq("is_featured", true);
-    if (data.limit) q = q.limit(data.limit);
-    const { data: rows, error } = await q;
-    if (error) throw new Error(error.message);
-    return (rows ?? []) as unknown as Car[];
+    const repo = await import("@/lib/db/repository");
+    return repo.listCars(data);
   });
 
 export const getCarBySlug = createServerFn({ method: "GET" })
   .validator((slug: string) => slug)
   .handler(async ({ data: slug }) => {
-    const { data: row, error } = await supabase
-      .from("cars")
-      .select("*, images:car_images(id, car_id, url, alt_text, sort_order)")
-      .eq("slug", slug)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    if (!row) return null;
-    const car = row as unknown as Car;
-    if (car.images) car.images.sort((a, b) => a.sort_order - b.sort_order);
-    return car;
+    const repo = await import("@/lib/db/repository");
+    return repo.getCarBySlug(slug);
   });
 
 export const similarCars = createServerFn({ method: "GET" })
   .validator((input: { excludeId: string; brand: string }) => input)
   .handler(async ({ data }) => {
-    const { data: rows, error } = await supabase
-      .from("cars")
-      .select("*, images:car_images(id, car_id, url, alt_text, sort_order)")
-      .neq("id", data.excludeId)
-      .eq("brand", data.brand)
-      .limit(3);
-    if (error) throw new Error(error.message);
-    return (rows ?? []) as unknown as Car[];
+    const repo = await import("@/lib/db/repository");
+    return repo.similarCars(data.excludeId, data.brand, 3);
   });
 
 // ---------- Lead submission (public) ----------
@@ -59,6 +40,8 @@ const LeadInput = z.object({
   email: z.string().trim().email().max(120).optional().or(z.literal("")),
   message: z.string().trim().max(1000).optional().or(z.literal("")),
   source: z.string().trim().min(2).max(40).optional(),
+  // Optional, explicit, unchecked-by-default marketing consent (GDPR).
+  marketing_consent: z.boolean().optional(),
   // Honeypot — keep permissive here because extensions/autofill may inject values.
   // We still enforce anti-spam in the handler by silently discarding non-empty values.
   honeypot: z.string().max(500).optional().or(z.literal("")),
@@ -68,77 +51,43 @@ export const submitLead = createServerFn({ method: "POST" })
   .validator(LeadInput)
   .handler(async ({ data }) => {
     const honeypotFilled = (data.honeypot ?? "").trim().length > 0;
+    const repo = await import("@/lib/db/repository");
 
-    const payload = {
+    await repo.insertLead({
       car_id: data.car_id ?? null,
       name: data.name,
       phone: data.phone,
       email: data.email || null,
       message: data.message || null,
-      source: honeypotFilled ? `${data.source || "website"}-honeypot` : (data.source || "website"),
-    };
+      source: honeypotFilled ? `${data.source || "website"}-honeypot` : data.source || "website",
+      marketing_consent: Boolean(data.marketing_consent),
+    });
 
-    // Prefer service-role writes on the server for reliability; fall back to public client.
-    try {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { error } = await supabaseAdmin.from("leads").insert(payload);
-      if (error) throw new Error(error.message);
-      return { ok: true };
-    } catch {
-      const { error } = await supabase.from("leads").insert(payload);
-      if (error) throw new Error(error.message);
+    // Best-effort email notification; never fails the lead submission.
+    if (!honeypotFilled) {
+      try {
+        const { notifyNewLead } = await import("@/lib/notify");
+        await notifyNewLead({
+          name: data.name,
+          phone: data.phone,
+          email: data.email || null,
+          message: data.message || null,
+        });
+      } catch {
+        // ignore notification errors
+      }
     }
 
     return { ok: true };
   });
 
 // ---------- Admin (behind Cloudflare Access + ADMIN_EMAILS allowlist) ----------
-//
-// Authorization is enforced by the `requireAdmin` middleware (verifies the
-// Cloudflare Access JWT server-side). Data access uses the Supabase service-role
-// client transitionally; this moves to the D1 repository in the next phase.
 
-/**
- * Returns a slug that is unique in the `cars` table.
- * If `baseSlug` is already taken (by a car other than `excludeId`), appends -2, -3, …
- */
-async function uniqueSlug(sb: any, baseSlug: string, excludeId?: string): Promise<string> {
-  for (let attempt = 1; attempt <= 20; attempt++) {
-    const slug = attempt === 1 ? baseSlug : `${baseSlug}-${attempt}`;
-    let q = sb.from("cars").select("id").eq("slug", slug);
-    if (excludeId) q = q.neq("id", excludeId);
-    const { data } = await q.maybeSingle();
-    if (!data) return slug;
-  }
-  return `${baseSlug}-${Date.now()}`;
-}
-
-export const adminListCars = createServerFn({ method: "GET" })
-  .middleware([requireAdmin])
-  .handler(async () => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
-      .from("cars")
-      .select("*, images:car_images(id, car_id, url, alt_text, sort_order)")
-      .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
-    return (data ?? []) as unknown as Car[];
-  });
-
-export const adminGetCar = createServerFn({ method: "GET" })
-  .middleware([requireAdmin])
-  .validator((id: string) => id)
-  .handler(async ({ data: id }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
-      .from("cars")
-      .select("*, images:car_images(id, car_id, url, alt_text, sort_order)")
-      .eq("id", id)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    if (data?.images) (data.images as CarImage[]).sort((a, b) => a.sort_order - b.sort_order);
-    return data as unknown as Car | null;
-  });
+const ImageInput = z.object({
+  url: z.string().url().max(1000),
+  alt_text: z.string().max(160).optional().nullable(),
+  r2_key: z.string().max(300).optional().nullable(),
+});
 
 const CarInput = z.object({
   slug: z.string().min(2).max(120),
@@ -160,74 +109,86 @@ const CarInput = z.object({
   equipment: z.array(z.string().max(60)).default([]),
   status: z.string().min(1).max(20),
   is_featured: z.boolean().default(false),
-  images: z.array(z.object({ url: z.string().url().max(500), alt_text: z.string().max(120).optional().nullable() })).default([]),
+  images: z.array(ImageInput).default([]),
 });
+
+export const adminListCars = createServerFn({ method: "GET" })
+  .middleware([requireAdmin])
+  .handler(async () => {
+    const repo = await import("@/lib/db/repository");
+    return repo.listCars({});
+  });
+
+export const adminGetCar = createServerFn({ method: "GET" })
+  .middleware([requireAdmin])
+  .validator((id: string) => id)
+  .handler(async ({ data: id }) => {
+    const repo = await import("@/lib/db/repository");
+    return repo.getCarById(id);
+  });
 
 export const adminUpsertCar = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .validator(z.object({ id: z.string().uuid().optional(), data: CarInput }))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const repo = await import("@/lib/db/repository");
     const { images, ...carFields } = data.data;
-    // Ensure slug is unique before writing
-    carFields.slug = await uniqueSlug(supabaseAdmin, carFields.slug, data.id);
-    let carId = data.id;
-    if (carId) {
-      const { error } = await supabaseAdmin.from("cars").update(carFields).eq("id", carId);
-      if (error) throw new Error(error.message);
-    } else {
-      const { data: row, error } = await supabaseAdmin
-        .from("cars")
-        .insert(carFields)
-        .select("id")
-        .single();
-      if (error) throw new Error(error.message);
-      carId = row.id as string;
-    }
-    // Replace images
-    await supabaseAdmin.from("car_images").delete().eq("car_id", carId);
-    if (images.length) {
-      const toInsert = images.map((img, i) => ({
-        car_id: carId,
+    return repo.upsertCar(
+      carFields,
+      images.map((img) => ({
         url: img.url,
         alt_text: img.alt_text ?? null,
-        sort_order: i,
-      }));
-      const { error } = await supabaseAdmin.from("car_images").insert(toInsert);
-      if (error) throw new Error(error.message);
-    }
-    return { id: carId };
+        r2_key: img.r2_key ?? null,
+      })),
+      data.id,
+    );
   });
 
 export const adminDeleteCar = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .validator((id: string) => id)
   .handler(async ({ data: id }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("cars").delete().eq("id", id);
-    if (error) throw new Error(error.message);
+    const repo = await import("@/lib/db/repository");
+    // Remove backing R2 objects (best-effort) before deleting the car row.
+    const keys = await repo.getCarImageR2Keys(id);
+    if (keys.length) {
+      try {
+        const { deleteR2Objects } = await import("@/lib/images/r2");
+        await deleteR2Objects(keys);
+      } catch {
+        // orphaned objects are reported by the R2 audit script; don't block deletion
+      }
+    }
+    await repo.deleteCar(id);
     return { ok: true };
   });
 
 export const adminListLeads = createServerFn({ method: "GET" })
   .middleware([requireAdmin])
   .handler(async () => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
-      .from("leads")
-      .select("*, car:cars(id, slug, brand, model, year)")
-      .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
-    return data as unknown as (Lead & { car: { id: string; slug: string; brand: string; model: string; year: number } | null })[];
+    const repo = await import("@/lib/db/repository");
+    return repo.listLeads() as unknown as Promise<
+      (Lead & {
+        car: { id: string; slug: string; brand: string; model: string; year: number } | null;
+      })[]
+    >;
   });
 
 export const adminUpdateLeadStatus = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .validator(z.object({ id: z.string().uuid(), status: z.enum(["nou", "contactat", "inchis"]) }))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("leads").update({ status: data.status }).eq("id", data.id);
-    if (error) throw new Error(error.message);
+    const repo = await import("@/lib/db/repository");
+    await repo.updateLeadStatus(data.id, data.status);
+    return { ok: true };
+  });
+
+export const adminDeleteLead = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .validator((id: string) => id)
+  .handler(async ({ data: id }) => {
+    const repo = await import("@/lib/db/repository");
+    await repo.deleteLead(id);
     return { ok: true };
   });
 
@@ -239,3 +200,6 @@ export const checkIsAdmin = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     return Boolean(context.adminEmail);
   });
+
+// Re-export the domain type for callers that imported it from here previously.
+export type { Car };
