@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import type { Car, CarImage, Lead } from "@/lib/types";
 
 // ---------- Public reads ----------
@@ -92,7 +92,11 @@ export const submitLead = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-// ---------- Admin (requires auth + admin role) ----------
+// ---------- Admin (behind Cloudflare Access + ADMIN_EMAILS allowlist) ----------
+//
+// Authorization is enforced by the `requireAdmin` middleware (verifies the
+// Cloudflare Access JWT server-side). Data access uses the Supabase service-role
+// client transitionally; this moves to the D1 repository in the next phase.
 
 /**
  * Returns a slug that is unique in the `cars` table.
@@ -109,19 +113,11 @@ async function uniqueSlug(sb: any, baseSlug: string, excludeId?: string): Promis
   return `${baseSlug}-${Date.now()}`;
 }
 
-async function assertAdmin(ctx: { supabase: any; userId: string }) {
-  const { data, error } = await ctx.supabase.rpc("has_role", {
-    _user_id: ctx.userId,
-    _role: "admin",
-  });
-  if (error || !data) throw new Error("Forbidden");
-}
-
 export const adminListCars = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    await assertAdmin(context);
-    const { data, error } = await context.supabase
+  .middleware([requireAdmin])
+  .handler(async () => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
       .from("cars")
       .select("*, images:car_images(id, car_id, url, alt_text, sort_order)")
       .order("created_at", { ascending: false });
@@ -130,11 +126,11 @@ export const adminListCars = createServerFn({ method: "GET" })
   });
 
 export const adminGetCar = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdmin])
   .validator((id: string) => id)
-  .handler(async ({ context, data: id }) => {
-    await assertAdmin(context);
-    const { data, error } = await context.supabase
+  .handler(async ({ data: id }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
       .from("cars")
       .select("*, images:car_images(id, car_id, url, alt_text, sort_order)")
       .eq("id", id)
@@ -168,19 +164,19 @@ const CarInput = z.object({
 });
 
 export const adminUpsertCar = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdmin])
   .validator(z.object({ id: z.string().uuid().optional(), data: CarInput }))
-  .handler(async ({ context, data }) => {
-    await assertAdmin(context);
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { images, ...carFields } = data.data;
     // Ensure slug is unique before writing
-    carFields.slug = await uniqueSlug(context.supabase, carFields.slug, data.id);
+    carFields.slug = await uniqueSlug(supabaseAdmin, carFields.slug, data.id);
     let carId = data.id;
     if (carId) {
-      const { error } = await context.supabase.from("cars").update(carFields).eq("id", carId);
+      const { error } = await supabaseAdmin.from("cars").update(carFields).eq("id", carId);
       if (error) throw new Error(error.message);
     } else {
-      const { data: row, error } = await context.supabase
+      const { data: row, error } = await supabaseAdmin
         .from("cars")
         .insert(carFields)
         .select("id")
@@ -189,7 +185,7 @@ export const adminUpsertCar = createServerFn({ method: "POST" })
       carId = row.id as string;
     }
     // Replace images
-    await context.supabase.from("car_images").delete().eq("car_id", carId);
+    await supabaseAdmin.from("car_images").delete().eq("car_id", carId);
     if (images.length) {
       const toInsert = images.map((img, i) => ({
         car_id: carId,
@@ -197,27 +193,27 @@ export const adminUpsertCar = createServerFn({ method: "POST" })
         alt_text: img.alt_text ?? null,
         sort_order: i,
       }));
-      const { error } = await context.supabase.from("car_images").insert(toInsert);
+      const { error } = await supabaseAdmin.from("car_images").insert(toInsert);
       if (error) throw new Error(error.message);
     }
     return { id: carId };
   });
 
 export const adminDeleteCar = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdmin])
   .validator((id: string) => id)
-  .handler(async ({ context, data: id }) => {
-    await assertAdmin(context);
-    const { error } = await context.supabase.from("cars").delete().eq("id", id);
+  .handler(async ({ data: id }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("cars").delete().eq("id", id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
 export const adminListLeads = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    await assertAdmin(context);
-    const { data, error } = await context.supabase
+  .middleware([requireAdmin])
+  .handler(async () => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
       .from("leads")
       .select("*, car:cars(id, slug, brand, model, year)")
       .order("created_at", { ascending: false });
@@ -226,23 +222,20 @@ export const adminListLeads = createServerFn({ method: "GET" })
   });
 
 export const adminUpdateLeadStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdmin])
   .validator(z.object({ id: z.string().uuid(), status: z.enum(["nou", "contactat", "inchis"]) }))
-  .handler(async ({ context, data }) => {
-    await assertAdmin(context);
-    const { error } = await context.supabase.from("leads").update({ status: data.status }).eq("id", data.id);
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("leads").update({ status: data.status }).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
+// With `requireAdmin` attached, reaching the handler means the Cloudflare Access
+// JWT is valid and the email is allowlisted. If not, the middleware throws and
+// the client treats it as "not admin".
 export const checkIsAdmin = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdmin])
   .handler(async ({ context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    if (error) return false;
-    return Boolean(data);
+    return Boolean(context.adminEmail);
   });

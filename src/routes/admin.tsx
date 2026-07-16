@@ -1,27 +1,18 @@
-import { createFileRoute, Outlet, redirect, Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Outlet, Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { checkIsAdmin } from "@/lib/api/cars.functions";
 import { Car, Users, LogOut, ShieldAlert, LayoutDashboard, Plus, Settings } from "lucide-react";
 
+// Access to /admin* is gated at the edge by Cloudflare Access (Zero Trust).
+// `checkIsAdmin` re-verifies the Access JWT server-side, so the UI reflects the
+// real authorization result rather than trusting the client.
 export const Route = createFileRoute("/admin")({
   ssr: false,
-  beforeLoad: async () => {
-    try {
-      const { data, error } = await supabase.auth.getUser();
-      if (error || !data.user) throw redirect({ to: "/auth" });
-      return { user: data.user };
-    } catch {
-      // Offline/network failures should not crash route loading.
-      throw redirect({ to: "/auth" });
-    }
-  },
   component: AdminLayout,
 });
 
 function AdminLayout() {
-  const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const check = useServerFn(checkIsAdmin);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -30,9 +21,9 @@ function AdminLayout() {
     check().then(setIsAdmin).catch(() => setIsAdmin(false));
   }, [check]);
 
-  async function signOut() {
-    await supabase.auth.signOut();
-    navigate({ to: "/auth", replace: true });
+  function signOut() {
+    // Clears the Cloudflare Access session for this browser.
+    window.location.href = "/cdn-cgi/access/logout";
   }
 
   if (isAdmin === null) {
@@ -45,10 +36,10 @@ function AdminLayout() {
         <ShieldAlert className="h-10 w-10 text-destructive" />
         <h1 className="mt-3 font-display text-2xl font-bold">Acces refuzat</h1>
         <p className="mt-1 max-w-md text-sm text-muted-foreground">
-          Contul tău este autentificat, dar nu are rol de administrator. Contactează proprietarul pentru a-ți acorda rolul de administrator.
+          Acest cont nu are drept de administrator. Autentifică-te cu un cont autorizat prin Cloudflare Access sau contactează proprietarul.
         </p>
         <div className="mt-6 flex gap-2">
-          <button onClick={signOut} className="rounded-xl border border-border bg-card px-4 py-2 text-sm">Deconectare</button>
+          <button onClick={signOut} className="rounded-xl border border-border bg-card px-4 py-2 text-sm">Schimbă contul</button>
           <Link to="/" className="rounded-xl bg-foreground px-4 py-2 text-sm text-background">Înapoi acasă</Link>
         </div>
       </div>
