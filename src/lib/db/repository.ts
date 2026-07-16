@@ -73,6 +73,7 @@ interface SiteSettingsRow {
   phone: string;
   phone_display: string;
   whatsapp: string;
+  address: string | null;
   maps_url: string | null;
   waze_url: string | null;
   opening_hours: string; // JSON
@@ -457,7 +458,7 @@ export async function getSiteSettingsRow(): Promise<SiteSettingsInput | null> {
   const db = getDB();
   const row = await db
     .prepare(
-      `SELECT contact_email, phone, phone_display, whatsapp, maps_url, waze_url, opening_hours, social_links
+      `SELECT contact_email, phone, phone_display, whatsapp, address, maps_url, waze_url, opening_hours, social_links
        FROM site_settings WHERE id = 'default'`,
     )
     .first<SiteSettingsRow>();
@@ -467,6 +468,7 @@ export async function getSiteSettingsRow(): Promise<SiteSettingsInput | null> {
     phone: row.phone,
     phone_display: row.phone_display,
     whatsapp: row.whatsapp,
+    address: row.address ?? "",
     maps_url: row.maps_url ?? "",
     waze_url: row.waze_url ?? "",
     opening_hours: safeJsonArray(row.opening_hours),
@@ -479,11 +481,11 @@ export async function upsertSiteSettings(input: SiteSettingsInput): Promise<void
   const now = nowIso();
   await db
     .prepare(
-      `INSERT INTO site_settings (id, contact_email, phone, phone_display, whatsapp, maps_url, waze_url, opening_hours, social_links, created_at, updated_at)
-       VALUES ('default', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO site_settings (id, contact_email, phone, phone_display, whatsapp, address, maps_url, waze_url, opening_hours, social_links, created_at, updated_at)
+       VALUES ('default', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT (id) DO UPDATE SET
          contact_email=excluded.contact_email, phone=excluded.phone, phone_display=excluded.phone_display,
-         whatsapp=excluded.whatsapp, maps_url=excluded.maps_url, waze_url=excluded.waze_url,
+         whatsapp=excluded.whatsapp, address=excluded.address, maps_url=excluded.maps_url, waze_url=excluded.waze_url,
          opening_hours=excluded.opening_hours, social_links=excluded.social_links,
          updated_at=excluded.updated_at`,
     )
@@ -492,6 +494,7 @@ export async function upsertSiteSettings(input: SiteSettingsInput): Promise<void
       input.phone,
       input.phone_display,
       input.whatsapp,
+      input.address ?? "",
       input.maps_url ?? "",
       input.waze_url ?? "",
       JSON.stringify(input.opening_hours ?? []),

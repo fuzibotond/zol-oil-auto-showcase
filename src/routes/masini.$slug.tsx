@@ -387,7 +387,7 @@ function CarDetail() {
                 </div>
                 <div className="text-sm">
                   <div className="font-medium">{SITE.name}</div>
-                  <div className="text-muted-foreground">{SITE.address}</div>
+                  <div className="text-muted-foreground">{settings.address || SITE.address}</div>
                 </div>
               </div>
               <div className="flex flex-wrap gap-x-4 gap-y-1">

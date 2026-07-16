@@ -49,10 +49,17 @@ export interface SiteSettingsInput {
   phone: string;
   phone_display: string;
   whatsapp: string;
+  address: string;
   maps_url: string;
   waze_url: string;
   opening_hours: SiteOpeningHour[];
   social_links: SiteSocialLink[];
+}
+
+/** Google Maps embed URL (no API key) derived from a plain-text address. */
+export function mapsEmbedUrl(address: string): string {
+  const q = encodeURIComponent(address?.trim() || SITE.address);
+  return `https://www.google.com/maps?q=${q}&output=embed`;
 }
 
 export const SOCIAL_PLATFORM_META: Record<SocialPlatform, { label: string }> = {
@@ -70,6 +77,7 @@ export const SITE_SETTINGS_FALLBACK: SiteSettingsInput = {
   phone: SITE.phone,
   phone_display: SITE.phoneDisplay,
   whatsapp: SITE.whatsapp,
+  address: SITE.address,
   maps_url: SITE.mapsDirections,
   waze_url: SITE.waze,
   opening_hours: SITE.hours,

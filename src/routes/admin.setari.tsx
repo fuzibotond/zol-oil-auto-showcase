@@ -167,11 +167,21 @@ function AdminSettingsPage() {
         </section>
 
         <section className="surface-card p-6">
-          <div className="font-display text-lg font-semibold">Locație (hărți)</div>
+          <div className="font-display text-lg font-semibold">Locație (adresă & hărți)</div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Link-uri către locația parcului auto. Apar la pagina mașinii și în footer. Lasă gol
-            pentru a ascunde.
+            Adresa apare în footer, pagina de contact și „Despre noi”, și generează harta afișată pe
+            site. Link-urile Maps/Waze deschid direcțiile. Lasă gol pentru a ascunde.
           </p>
+          <div className="mt-4 grid gap-4">
+            <Field label="Adresă (text)">
+              <input
+                className={inputCls}
+                value={form.address}
+                onChange={(e) => setForm({ ...form, address: e.target.value })}
+                placeholder="Cernat, jud. Covasna, România"
+              />
+            </Field>
+          </div>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <Field label="Link Google Maps">
               <input

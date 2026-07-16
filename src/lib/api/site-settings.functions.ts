@@ -29,6 +29,7 @@ const SettingsInputSchema = z.object({
   phone: z.string().trim().min(4).max(40),
   phone_display: z.string().trim().min(4).max(40),
   whatsapp: z.string().trim().min(4).max(30),
+  address: z.string().trim().max(240),
   maps_url: z.string().trim().max(600),
   waze_url: z.string().trim().max(600),
   opening_hours: z.array(OpeningHourSchema).max(14),
@@ -73,6 +74,7 @@ function normalizeSettings(input?: Partial<SiteSettingsInput> | null): SiteSetti
     phone: input.phone?.trim() || SITE_SETTINGS_FALLBACK.phone,
     phone_display: input.phone_display?.trim() || SITE_SETTINGS_FALLBACK.phone_display,
     whatsapp: input.whatsapp?.trim() || SITE_SETTINGS_FALLBACK.whatsapp,
+    address: input.address?.trim() || SITE_SETTINGS_FALLBACK.address,
     // maps/waze may be intentionally blank (admin cleared them) → keep "" rather than forcing a default.
     maps_url: input.maps_url?.trim() ?? SITE_SETTINGS_FALLBACK.maps_url,
     waze_url: input.waze_url?.trim() ?? SITE_SETTINGS_FALLBACK.waze_url,
