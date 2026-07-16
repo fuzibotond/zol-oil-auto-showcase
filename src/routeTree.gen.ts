@@ -18,6 +18,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as MasiniIndexRouteImport } from './routes/masini.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as MasiniSlugRouteImport } from './routes/masini.$slug'
+import { Route as ImgSplatRouteImport } from './routes/img.$'
+import { Route as ApiUploadRouteImport } from './routes/api.upload'
 import { Route as AdminSetariRouteImport } from './routes/admin.setari'
 import { Route as AdminMasiniRouteImport } from './routes/admin.masini'
 import { Route as AdminLeaduriRouteImport } from './routes/admin.leaduri'
@@ -70,6 +72,16 @@ const MasiniSlugRoute = MasiniSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => MasiniRoute,
 } as any)
+const ImgSplatRoute = ImgSplatRouteImport.update({
+  id: '/img/$',
+  path: '/img/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiUploadRoute = ApiUploadRouteImport.update({
+  id: '/api/upload',
+  path: '/api/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminSetariRoute = AdminSetariRouteImport.update({
   id: '/setari',
   path: '/setari',
@@ -111,6 +123,8 @@ export interface FileRoutesByFullPath {
   '/admin/leaduri': typeof AdminLeaduriRoute
   '/admin/masini': typeof AdminMasiniRouteWithChildren
   '/admin/setari': typeof AdminSetariRoute
+  '/api/upload': typeof ApiUploadRoute
+  '/img/$': typeof ImgSplatRoute
   '/masini/$slug': typeof MasiniSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/masini/': typeof MasiniIndexRoute
@@ -125,6 +139,8 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/leaduri': typeof AdminLeaduriRoute
   '/admin/setari': typeof AdminSetariRoute
+  '/api/upload': typeof ApiUploadRoute
+  '/img/$': typeof ImgSplatRoute
   '/masini/$slug': typeof MasiniSlugRoute
   '/admin': typeof AdminIndexRoute
   '/masini': typeof MasiniIndexRoute
@@ -143,6 +159,8 @@ export interface FileRoutesById {
   '/admin/leaduri': typeof AdminLeaduriRoute
   '/admin/masini': typeof AdminMasiniRouteWithChildren
   '/admin/setari': typeof AdminSetariRoute
+  '/api/upload': typeof ApiUploadRoute
+  '/img/$': typeof ImgSplatRoute
   '/masini/$slug': typeof MasiniSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/masini/': typeof MasiniIndexRoute
@@ -162,6 +180,8 @@ export interface FileRouteTypes {
     | '/admin/leaduri'
     | '/admin/masini'
     | '/admin/setari'
+    | '/api/upload'
+    | '/img/$'
     | '/masini/$slug'
     | '/admin/'
     | '/masini/'
@@ -176,6 +196,8 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/admin/leaduri'
     | '/admin/setari'
+    | '/api/upload'
+    | '/img/$'
     | '/masini/$slug'
     | '/admin'
     | '/masini'
@@ -193,6 +215,8 @@ export interface FileRouteTypes {
     | '/admin/leaduri'
     | '/admin/masini'
     | '/admin/setari'
+    | '/api/upload'
+    | '/img/$'
     | '/masini/$slug'
     | '/admin/'
     | '/masini/'
@@ -208,6 +232,8 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   MasiniRoute: typeof MasiniRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ApiUploadRoute: typeof ApiUploadRoute
+  ImgSplatRoute: typeof ImgSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -274,6 +300,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/masini/$slug'
       preLoaderRoute: typeof MasiniSlugRouteImport
       parentRoute: typeof MasiniRoute
+    }
+    '/img/$': {
+      id: '/img/$'
+      path: '/img/$'
+      fullPath: '/img/$'
+      preLoaderRoute: typeof ImgSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/upload': {
+      id: '/api/upload'
+      path: '/api/upload'
+      fullPath: '/api/upload'
+      preLoaderRoute: typeof ApiUploadRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/setari': {
       id: '/admin/setari'
@@ -372,6 +412,8 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   MasiniRoute: MasiniRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ApiUploadRoute: ApiUploadRoute,
+  ImgSplatRoute: ImgSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

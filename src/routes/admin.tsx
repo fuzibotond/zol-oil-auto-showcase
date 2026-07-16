@@ -18,7 +18,9 @@ function AdminLayout() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
   useEffect(() => {
-    check().then(setIsAdmin).catch(() => setIsAdmin(false));
+    check()
+      .then(setIsAdmin)
+      .catch(() => setIsAdmin(false));
   }, [check]);
 
   function signOut() {
@@ -27,7 +29,11 @@ function AdminLayout() {
   }
 
   if (isAdmin === null) {
-    return <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">Se verifică accesul...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">
+        Se verifică accesul...
+      </div>
+    );
   }
 
   if (!isAdmin) {
@@ -36,11 +42,19 @@ function AdminLayout() {
         <ShieldAlert className="h-10 w-10 text-destructive" />
         <h1 className="mt-3 font-display text-2xl font-bold">Acces refuzat</h1>
         <p className="mt-1 max-w-md text-sm text-muted-foreground">
-          Acest cont nu are drept de administrator. Autentifică-te cu un cont autorizat prin Cloudflare Access sau contactează proprietarul.
+          Acest cont nu are drept de administrator. Autentifică-te cu un cont autorizat prin
+          Cloudflare Access sau contactează proprietarul.
         </p>
         <div className="mt-6 flex gap-2">
-          <button onClick={signOut} className="rounded-xl border border-border bg-card px-4 py-2 text-sm">Schimbă contul</button>
-          <Link to="/" className="rounded-xl bg-foreground px-4 py-2 text-sm text-background">Înapoi acasă</Link>
+          <button
+            onClick={signOut}
+            className="rounded-xl border border-border bg-card px-4 py-2 text-sm"
+          >
+            Schimbă contul
+          </button>
+          <Link to="/" className="rounded-xl bg-foreground px-4 py-2 text-sm text-background">
+            Înapoi acasă
+          </Link>
         </div>
       </div>
     );
@@ -58,7 +72,9 @@ function AdminLayout() {
       <aside className="md:sticky md:top-0 md:h-screen border-b md:border-b-0 md:border-r border-border bg-background flex md:flex-col">
         <div className="px-6 py-5 border-b border-border w-full">
           <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-foreground text-background font-display text-sm font-bold">Z</div>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-foreground text-background font-display text-sm font-bold">
+              Z
+            </div>
             <div className="leading-tight">
               <div className="font-display text-sm font-semibold">ZOL-OIL Admin</div>
               <div className="text-[11px] text-muted-foreground">Panou control</div>
@@ -69,17 +85,27 @@ function AdminLayout() {
           {navItems.map((n) => {
             const active = n.exact ? pathname === n.to : pathname.startsWith(n.to);
             return (
-              <Link key={n.to} to={n.to} className={`inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm ${active ? "bg-foreground text-background" : "hover:bg-secondary text-foreground"}`}>
+              <Link
+                key={n.to}
+                to={n.to}
+                className={`inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm ${active ? "bg-foreground text-background" : "hover:bg-secondary text-foreground"}`}
+              >
                 <n.icon className="h-4 w-4" /> <span className="hidden md:inline">{n.label}</span>
               </Link>
             );
           })}
-          <Link to="/admin/masini/nou" className="hidden md:inline-flex mt-2 items-center gap-2 rounded-xl border border-dashed border-border px-3 py-2.5 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground">
+          <Link
+            to="/admin/masini/nou"
+            className="hidden md:inline-flex mt-2 items-center gap-2 rounded-xl border border-dashed border-border px-3 py-2.5 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground"
+          >
             <Plus className="h-4 w-4" /> Mașină nouă
           </Link>
         </nav>
         <div className="hidden md:block p-3 border-t border-border">
-          <button onClick={signOut} className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm hover:bg-secondary">
+          <button
+            onClick={signOut}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm hover:bg-secondary"
+          >
             <LogOut className="h-4 w-4" /> Deconectare
           </button>
         </div>

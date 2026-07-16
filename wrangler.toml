@@ -1,43 +1,34 @@
-# Cloudflare configuration for ZOL-OIL.
+# Cloudflare configuration for ZOL-OIL (Cloudflare Pages, nitro "cloudflare-pages").
 #
-# The app currently deploys as a Cloudflare *Pages* project (nitro preset
-# "cloudflare-pages"). This file declares the D1 + R2 bindings so that:
-#   • local `vite dev` (via nitro's cloudflare dev proxy) exposes them on globalThis.__env__
-#   • `wrangler d1 migrations apply` knows where the migrations live
-#
-# ⚠️ REPLACE the placeholder IDs after creating the resources — see docs/CLOUDFLARE_DEPLOYMENT.md.
-#
-# NOTE (architecture decision, pending confirmation): reliable per-request binding
-# access on the *Pages* fetch path is awkward with this Nitro version. Moving to the
-# Workers preset ("cloudflare_module") — which sets globalThis.__env__ on every fetch —
-# is recommended. If we switch, replace `pages_build_output_dir` with `main = "<worker entry>"`
-# and deploy with `wrangler deploy`. Both variants use the SAME bindings below.
+# The app now runs on Cloudflare D1 (data) + R2 (images) — these bindings are
+# REQUIRED. They stay commented ONLY because a placeholder database_id makes the
+# Pages deploy fail (Error 8000022). To go live:
+#   1. wrangler d1 create zol-oil        → paste the returned UUID below
+#   2. wrangler r2 bucket create zol-oil-images
+#   3. uncomment the blocks below, then deploy
+# See docs/CLOUDFLARE_DEPLOYMENT.md for the full sequence (incl. migrations + data import).
 
 name = "zol-oil"
 compatibility_date = "2026-07-01"
 compatibility_flags = ["nodejs_compat"]
 
-# Cloudflare Pages build output (nitro cloudflare-pages preset).
 pages_build_output_dir = "dist"
 
-# ── D1 (relational data) ────────────────────────────────────────────────────
-[[d1_databases]]
-binding = "DB"
-database_name = "zol-oil"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
-migrations_dir = "migrations/d1"
+# ── REQUIRED — uncomment after creating the resources ───────────────────────────
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "zol-oil"
+# database_id = "PASTE_REAL_D1_UUID_HERE"
+# migrations_dir = "migrations/d1"
+#
+# [[r2_buckets]]
+# binding = "R2"
+# bucket_name = "zol-oil-images"
+#
+# [vars]
+# # Custom image-delivery base URL (attach a custom domain to the bucket; no r2.dev in prod).
+# # If omitted, images are served same-origin via the /img/<key> route.
+# R2_PUBLIC_BASE_URL = "https://img.zol-oil.ro"
 
-# ── R2 (image storage) ──────────────────────────────────────────────────────
-[[r2_buckets]]
-binding = "R2"
-bucket_name = "zol-oil-images"
-
-# ── Public (non-secret) vars ────────────────────────────────────────────────
-# Custom image-delivery base URL. Do NOT use the r2.dev dev URL in production —
-# attach a custom domain to the bucket (e.g. img.zol-oil.ro) and set it here.
-[vars]
-R2_PUBLIC_BASE_URL = "https://img.zol-oil.ro"
-
-# Secrets (RESEND_API_KEY, NOTIFY_EMAIL, ACCESS_TEAM_DOMAIN, ACCESS_AUD) are NOT
-# stored here. Use `.dev.vars` locally and `wrangler secret put` / the dashboard
-# in production.
+# Secrets/vars (RESEND_API_KEY, NOTIFY_EMAIL, ACCESS_TEAM_DOMAIN, ACCESS_AUD,
+# ADMIN_EMAILS) are set in the Pages dashboard / `.dev.vars`, not here.

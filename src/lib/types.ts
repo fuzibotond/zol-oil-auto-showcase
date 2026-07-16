@@ -6,6 +6,7 @@ export interface CarImage {
   url: string;
   alt_text: string | null;
   sort_order: number;
+  r2_key?: string | null;
 }
 
 export interface Car {

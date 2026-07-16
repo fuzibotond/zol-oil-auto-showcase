@@ -89,6 +89,7 @@ function mapImage(r: CarImageRow): CarImage {
     url: r.url,
     alt_text: r.alt_text,
     sort_order: r.sort_order,
+    r2_key: r.r2_key,
   };
 }
 
@@ -178,12 +179,18 @@ export async function getCarById(id: string): Promise<Car | null> {
   return mapCar(row, imgMap.get(row.id) ?? []);
 }
 
+export async function listCarSlugs(): Promise<{ slug: string; updated_at: string }[]> {
+  const db = getDB();
+  const { results } = await db
+    .prepare(`SELECT slug, updated_at FROM cars ORDER BY updated_at DESC`)
+    .all<{ slug: string; updated_at: string }>();
+  return results;
+}
+
 export async function similarCars(excludeId: string, brand: string, limit = 3): Promise<Car[]> {
   const db = getDB();
   const { results } = await db
-    .prepare(
-      `SELECT * FROM cars WHERE id != ? AND brand = ? ORDER BY created_at DESC LIMIT ?`,
-    )
+    .prepare(`SELECT * FROM cars WHERE id != ? AND brand = ? ORDER BY created_at DESC LIMIT ?`)
     .bind(excludeId, brand, Math.max(1, Math.min(12, limit)))
     .all<CarRow>();
   const imgMap = await imagesForCarIds(results.map((r) => r.id));
@@ -198,7 +205,10 @@ export async function uniqueSlug(baseSlug: string, excludeId?: string): Promise<
   for (let attempt = 1; attempt <= 20; attempt++) {
     const slug = attempt === 1 ? baseSlug : `${baseSlug}-${attempt}`;
     const row = excludeId
-      ? await db.prepare(`SELECT id FROM cars WHERE slug = ? AND id != ?`).bind(slug, excludeId).first<{ id: string }>()
+      ? await db
+          .prepare(`SELECT id FROM cars WHERE slug = ? AND id != ?`)
+          .bind(slug, excludeId)
+          .first<{ id: string }>()
       : await db.prepare(`SELECT id FROM cars WHERE slug = ?`).bind(slug).first<{ id: string }>();
     if (!row) return slug;
   }
@@ -252,11 +262,27 @@ export async function upsertCar(
          WHERE id=?`,
       )
       .bind(
-        slug, input.brand, input.model, input.version ?? null, input.autovit_url ?? null,
-        input.year, input.price, input.currency, input.mileage, input.fuel_type, input.transmission,
-        input.engine_size ?? null, input.power ?? null, input.body_type ?? null, input.color ?? null,
-        input.description ?? null, JSON.stringify(input.equipment ?? []), input.status,
-        input.is_featured ? 1 : 0, now, id,
+        slug,
+        input.brand,
+        input.model,
+        input.version ?? null,
+        input.autovit_url ?? null,
+        input.year,
+        input.price,
+        input.currency,
+        input.mileage,
+        input.fuel_type,
+        input.transmission,
+        input.engine_size ?? null,
+        input.power ?? null,
+        input.body_type ?? null,
+        input.color ?? null,
+        input.description ?? null,
+        JSON.stringify(input.equipment ?? []),
+        input.status,
+        input.is_featured ? 1 : 0,
+        now,
+        id,
       )
       .run();
   } else {
@@ -268,11 +294,28 @@ export async function upsertCar(
          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       )
       .bind(
-        carId, slug, input.brand, input.model, input.version ?? null, input.autovit_url ?? null,
-        input.year, input.price, input.currency, input.mileage, input.fuel_type, input.transmission,
-        input.engine_size ?? null, input.power ?? null, input.body_type ?? null, input.color ?? null,
-        input.description ?? null, JSON.stringify(input.equipment ?? []), input.status,
-        input.is_featured ? 1 : 0, now, now,
+        carId,
+        slug,
+        input.brand,
+        input.model,
+        input.version ?? null,
+        input.autovit_url ?? null,
+        input.year,
+        input.price,
+        input.currency,
+        input.mileage,
+        input.fuel_type,
+        input.transmission,
+        input.engine_size ?? null,
+        input.power ?? null,
+        input.body_type ?? null,
+        input.color ?? null,
+        input.description ?? null,
+        JSON.stringify(input.equipment ?? []),
+        input.status,
+        input.is_featured ? 1 : 0,
+        now,
+        now,
       )
       .run();
   }
@@ -356,7 +399,14 @@ export async function listLeads(): Promise<LeadWithCar[]> {
        FROM leads l LEFT JOIN cars c ON c.id = l.car_id
        ORDER BY l.created_at DESC`,
     )
-    .all<LeadRow & { c_slug: string | null; c_brand: string | null; c_model: string | null; c_year: number | null }>();
+    .all<
+      LeadRow & {
+        c_slug: string | null;
+        c_brand: string | null;
+        c_model: string | null;
+        c_year: number | null;
+      }
+    >();
   return results.map((r) => ({
     id: r.id,
     car_id: r.car_id,
@@ -367,9 +417,16 @@ export async function listLeads(): Promise<LeadWithCar[]> {
     source: r.source,
     status: r.status as Lead["status"],
     created_at: r.created_at,
-    car: r.car_id && r.c_slug
-      ? { id: r.car_id, slug: r.c_slug, brand: r.c_brand ?? "", model: r.c_model ?? "", year: r.c_year ?? 0 }
-      : null,
+    car:
+      r.car_id && r.c_slug
+        ? {
+            id: r.car_id,
+            slug: r.c_slug,
+            brand: r.c_brand ?? "",
+            model: r.c_model ?? "",
+            year: r.c_year ?? 0,
+          }
+        : null,
   }));
 }
 
@@ -418,8 +475,14 @@ export async function upsertSiteSettings(input: SiteSettingsInput): Promise<void
          updated_at=excluded.updated_at`,
     )
     .bind(
-      input.contact_email, input.phone, input.phone_display, input.whatsapp,
-      JSON.stringify(input.opening_hours ?? []), JSON.stringify(input.social_links ?? []), now, now,
+      input.contact_email,
+      input.phone,
+      input.phone_display,
+      input.whatsapp,
+      JSON.stringify(input.opening_hours ?? []),
+      JSON.stringify(input.social_links ?? []),
+      now,
+      now,
     )
     .run();
 }

@@ -1,18 +1,19 @@
 # ZOL-OIL — Cloudflare Deployment Guide
 
-> **Scope note:** this guide currently covers what is live in the codebase today —
-> Cloudflare **Access** admin authentication (data is still on Supabase). The D1
-> and R2 sections will be added when the data/image migration lands. See
+> The app now runs entirely on Cloudflare — **D1** (data), **R2** (images), and
+> **Access** (admin auth). Supabase has been removed. See
 > [CLOUDFLARE_MIGRATION_PLAN.md](CLOUDFLARE_MIGRATION_PLAN.md).
 
-## Current state after this change
+## Current state
 
-- **Public site:** unchanged — served by Cloudflare Pages, data from Supabase.
-- **Admin (`/admin*`):** authentication is handled by **Cloudflare Zero Trust Access**.
-  There is no application password anymore. The server verifies the Access JWT on
-  every admin request and additionally checks an `ADMIN_EMAILS` allowlist.
-- **Fails closed:** if Access/secrets are not configured, `/admin` shows
-  "Acces refuzat" and no admin API works. The public site is unaffected.
+- **Data:** Cloudflare **D1** (SQLite). Server functions use a parameterised repository.
+- **Images:** Cloudflare **R2**. Admin uploads go through `/api/upload` (signature-validated,
+  Access-protected); delivery via a custom domain (`R2_PUBLIC_BASE_URL`) or the same-origin
+  `/img/<key>` route.
+- **Admin (`/admin*`):** **Cloudflare Zero Trust Access**. No application password. The server
+  verifies the Access JWT on every admin request and checks an `ADMIN_EMAILS` allowlist.
+- **Fails closed:** without Access/secrets, `/admin` shows "Acces refuzat" and no admin API works.
+- **Requires D1/R2 bindings** to be provisioned (Step 2.5) — the data-backed pages need them.
 
 ---
 
@@ -59,11 +60,44 @@ Cloudflare dashboard → **Workers & Pages** → your Pages project → **Settin
 | `ACCESS_AUD` | *(the AUD tag from Step 1.5)* | |
 | `ADMIN_EMAILS` | `owner@example.com` | comma-separated for multiple admins |
 
-Keep the existing Supabase variables in place (`VITE_SUPABASE_URL`,
-`VITE_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`,
-`SUPABASE_SERVICE_ROLE_KEY`) — admin data writes use the service-role key.
+Optional vars: `RESEND_API_KEY` + `NOTIFY_EMAIL` (new-lead email), `NOTIFY_FROM`
+(verified Resend sender), `VITE_SITE_URL`. The old `SUPABASE_*` variables are **no
+longer used** and can be deleted once the migration is verified.
 
 > I never handle these secret values — set them yourself in the dashboard.
+
+## Step 2.5 — Provision D1 + R2 (you — needs `wrangler login`)
+
+The app now runs on Cloudflare D1 (data) and R2 (images). Create them and wire the
+bindings:
+
+```bash
+# 1. Create the database — copy the printed database_id
+wrangler d1 create zol-oil
+
+# 2. Create the image bucket
+wrangler r2 bucket create zol-oil-images
+```
+
+Then in **wrangler.toml**, uncomment the `[[d1_databases]]`, `[[r2_buckets]]` and
+`[vars]` blocks and paste the real `database_id`. Apply the schema:
+
+```bash
+# Local (for `vite dev`) and remote (production):
+wrangler d1 migrations apply zol-oil --local
+wrangler d1 migrations apply zol-oil --remote
+```
+
+Cloudflare Pages picks up the bindings from `wrangler.toml` at deploy. (If you prefer,
+you can instead add the D1/R2 bindings in the Pages dashboard → Settings → Functions →
+Bindings, and leave wrangler.toml commented.)
+
+### Bringing existing data over (optional)
+A fresh D1 database is **empty** — the site will show no cars until data exists. Two options:
+- **Start clean:** add vehicles through the admin panel (uploads go to R2 automatically).
+- **Migrate existing Supabase data:** run the Supabase→D1 export/import script
+  (`scripts/migrate/` — ask me to generate it; it needs your Supabase service-role key,
+  transforms the rows, mirrors Storage images to R2, and prints a migration report).
 
 ## Step 3 — Go live (me, on your word)
 
