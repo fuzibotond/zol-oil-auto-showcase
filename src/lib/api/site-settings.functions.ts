@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import {
   SITE_SETTINGS_FALLBACK,
   SOCIAL_PLATFORM_META,
@@ -82,14 +82,6 @@ function normalizeSettings(input?: Partial<SiteSettingsInput> | null): SiteSetti
   };
 }
 
-async function assertAdmin(ctx: { supabase: any; userId: string }) {
-  const { data, error } = await ctx.supabase.rpc("has_role", {
-    _user_id: ctx.userId,
-    _role: "admin",
-  });
-  if (error || !data) throw new Error("Forbidden");
-}
-
 export const getSiteSettings = createServerFn({ method: "GET" }).handler(async () => {
   const { data, error } = await supabase
     .from("site_settings")
@@ -107,15 +99,18 @@ export const getSiteSettings = createServerFn({ method: "GET" }).handler(async (
 });
 
 export const adminUpdateSiteSettings = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdmin])
   .validator(SettingsInputSchema)
-  .handler(async ({ context, data }) => {
-    await assertAdmin(context);
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const sanitized = normalizeSettings(data);
-    const { data: row, error } = await context.supabase
+    // opening_hours / social_links are JSONB columns; the generated Supabase types
+    // model them as `Json`, so cast the structured payload through unknown.
+    const upsertPayload = { id: "default", ...sanitized } as unknown as Record<string, unknown>;
+    const { data: row, error } = await supabaseAdmin
       .from("site_settings")
-      .upsert({ id: "default", ...sanitized }, { onConflict: "id" })
+      .upsert(upsertPayload as never, { onConflict: "id" })
       .select("contact_email, phone, phone_display, whatsapp, opening_hours, social_links")
       .single();
 
@@ -125,5 +120,5 @@ export const adminUpdateSiteSettings = createServerFn({ method: "POST" })
       }
       throw new Error(error.message);
     }
-    return normalizeSettings(row as Partial<SiteSettingsInput>);
+    return normalizeSettings(row as unknown as Partial<SiteSettingsInput>);
   });

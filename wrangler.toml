@@ -1,0 +1,43 @@
+# Cloudflare configuration for ZOL-OIL.
+#
+# The app currently deploys as a Cloudflare *Pages* project (nitro preset
+# "cloudflare-pages"). This file declares the D1 + R2 bindings so that:
+#   • local `vite dev` (via nitro's cloudflare dev proxy) exposes them on globalThis.__env__
+#   • `wrangler d1 migrations apply` knows where the migrations live
+#
+# ⚠️ REPLACE the placeholder IDs after creating the resources — see docs/CLOUDFLARE_DEPLOYMENT.md.
+#
+# NOTE (architecture decision, pending confirmation): reliable per-request binding
+# access on the *Pages* fetch path is awkward with this Nitro version. Moving to the
+# Workers preset ("cloudflare_module") — which sets globalThis.__env__ on every fetch —
+# is recommended. If we switch, replace `pages_build_output_dir` with `main = "<worker entry>"`
+# and deploy with `wrangler deploy`. Both variants use the SAME bindings below.
+
+name = "zol-oil"
+compatibility_date = "2026-07-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Cloudflare Pages build output (nitro cloudflare-pages preset).
+pages_build_output_dir = "dist"
+
+# ── D1 (relational data) ────────────────────────────────────────────────────
+[[d1_databases]]
+binding = "DB"
+database_name = "zol-oil"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+migrations_dir = "migrations/d1"
+
+# ── R2 (image storage) ──────────────────────────────────────────────────────
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "zol-oil-images"
+
+# ── Public (non-secret) vars ────────────────────────────────────────────────
+# Custom image-delivery base URL. Do NOT use the r2.dev dev URL in production —
+# attach a custom domain to the bucket (e.g. img.zol-oil.ro) and set it here.
+[vars]
+R2_PUBLIC_BASE_URL = "https://img.zol-oil.ro"
+
+# Secrets (RESEND_API_KEY, NOTIFY_EMAIL, ACCESS_TEAM_DOMAIN, ACCESS_AUD) are NOT
+# stored here. Use `.dev.vars` locally and `wrangler secret put` / the dashboard
+# in production.

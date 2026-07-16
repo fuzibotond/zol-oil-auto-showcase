@@ -1,9 +1,20 @@
-# Local Wrangler / Cloudflare Workers secrets — equivalent to .env for `wrangler dev`
-# Copy this file to .dev.vars and fill in real values.
-# .dev.vars is gitignored — NEVER commit it.
+# Local Wrangler / Cloudflare secrets — loaded by `wrangler dev` and the
+# nitro cloudflare dev proxy. Copy to `.dev.vars` and fill in real values.
+# `.dev.vars` is gitignored — NEVER commit it.
+#
+# D1 (DB) and R2 (R2) are BINDINGS, not secrets — they are declared in
+# wrangler.toml, not here.
 
-SUPABASE_URL=https://YOUR_PROJECT.supabase.co
-SUPABASE_PUBLISHABLE_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
+# Email notifications for new leads (Resend HTTP API)
 RESEND_API_KEY=
 NOTIFY_EMAIL=contact@your-domain.com
+
+# Cloudflare Access (admin auth) — used to validate the Access JWT server-side.
+# ACCESS_TEAM_DOMAIN is your team domain, e.g. myteam.cloudflareaccess.com
+# ACCESS_AUD is the Application Audience (AUD) tag from the Access app.
+ACCESS_TEAM_DOMAIN=
+ACCESS_AUD=
+
+# Comma-separated allowlist of admin email addresses. An authenticated Access
+# user is only treated as admin if their email is listed here.
+ADMIN_EMAILS=owner@example.com
