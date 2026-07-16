@@ -1,12 +1,9 @@
 # Cloudflare configuration for ZOL-OIL (Cloudflare Pages, nitro "cloudflare-pages").
 #
-# The app now runs on Cloudflare D1 (data) + R2 (images) — these bindings are
-# REQUIRED. They stay commented ONLY because a placeholder database_id makes the
-# Pages deploy fail (Error 8000022). To go live:
-#   1. wrangler d1 create zol-oil        → paste the returned UUID below
-#   2. wrangler r2 bucket create zol-oil-images
-#   3. uncomment the blocks below, then deploy
-# See docs/CLOUDFLARE_DEPLOYMENT.md for the full sequence (incl. migrations + data import).
+# The app runs on Cloudflare D1 (data) + R2 (images). Resources are provisioned and
+# bound below (database `zol-oil`, bucket `zol-oil-images`). Migrations live in
+# migrations/d1 — apply with `wrangler d1 migrations apply zol-oil --remote`.
+# See docs/CLOUDFLARE_DEPLOYMENT.md for the full sequence.
 
 name = "zol-oil"
 compatibility_date = "2026-07-01"
@@ -14,20 +11,20 @@ compatibility_flags = ["nodejs_compat"]
 
 pages_build_output_dir = "dist"
 
-# ── REQUIRED — uncomment after creating the resources ───────────────────────────
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "zol-oil"
-# database_id = "PASTE_REAL_D1_UUID_HERE"
-# migrations_dir = "migrations/d1"
-#
-# [[r2_buckets]]
-# binding = "R2"
-# bucket_name = "zol-oil-images"
-#
+# The code reads env.DB and env.R2 — the binding NAMES must stay DB and R2.
+[[d1_databases]]
+binding = "DB"
+database_name = "zol-oil"
+database_id = "d8ae48c2-236f-4dd8-b3e6-76a37db62126"
+migrations_dir = "migrations/d1"
+
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "zol-oil-images"
+
 # [vars]
-# # Custom image-delivery base URL (attach a custom domain to the bucket; no r2.dev in prod).
-# # If omitted, images are served same-origin via the /img/<key> route.
+# Custom image-delivery base URL (attach a custom domain to the R2 bucket; no r2.dev in prod).
+# Left unset for now → images are served same-origin via the /img/<key> route.
 # R2_PUBLIC_BASE_URL = "https://img.zol-oil.ro"
 
 # Secrets/vars (RESEND_API_KEY, NOTIFY_EMAIL, ACCESS_TEAM_DOMAIN, ACCESS_AUD,
