@@ -2,7 +2,16 @@ import { createFileRoute, Outlet, Link, useRouterState } from "@tanstack/react-r
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { checkIsAdmin } from "@/lib/api/cars.functions";
-import { Car, Users, LogOut, ShieldAlert, LayoutDashboard, Plus, Settings } from "lucide-react";
+import {
+  Car,
+  Users,
+  LogOut,
+  ShieldAlert,
+  LayoutDashboard,
+  Plus,
+  Settings,
+  Info,
+} from "lucide-react";
 
 // Access to /admin* is gated at the edge by Cloudflare Access (Zero Trust).
 // `checkIsAdmin` re-verifies the Access JWT server-side, so the UI reflects the
@@ -64,6 +73,7 @@ function AdminLayout() {
     { to: "/admin" as const, label: "Dashboard", icon: LayoutDashboard, exact: true },
     { to: "/admin/masini" as const, label: "Mașini", icon: Car },
     { to: "/admin/leaduri" as const, label: "Leaduri", icon: Users },
+    { to: "/admin/despre" as const, label: "Despre noi", icon: Info },
     { to: "/admin/setari" as const, label: "Setări", icon: Settings },
   ];
 

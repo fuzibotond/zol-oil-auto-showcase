@@ -47,6 +47,27 @@ export interface Lead {
   created_at: string;
 }
 
+export interface AboutPage {
+  hero_title: string;
+  intro: string;
+  seo_title: string;
+  seo_description: string;
+}
+
+export type ImagePosition = "left" | "right" | "top" | "none";
+
+export interface AboutSection {
+  id: string;
+  title: string;
+  body: string | null;
+  image_url: string | null;
+  image_r2_key: string | null;
+  image_alt: string | null;
+  image_position: ImagePosition;
+  sort_order: number;
+  is_published: boolean;
+}
+
 export interface SiteSettings {
   id: string;
   contact_email: string;

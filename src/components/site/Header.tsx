@@ -7,6 +7,7 @@ import { useSiteSettings } from "@/hooks/use-site-settings";
 const navLinks = [
   { to: "/" as const, label: "Acasă" },
   { to: "/masini" as const, label: "Mașini" },
+  { to: "/despre-noi" as const, label: "Despre noi" },
   { to: "/contact" as const, label: "Contact" },
 ];
 

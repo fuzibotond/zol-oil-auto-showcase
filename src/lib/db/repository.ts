@@ -6,7 +6,15 @@
 //   const repo = await import("@/lib/db/repository");
 // so it never ends up in the client bundle.
 
-import type { Car, CarImage, CarStatus, Lead } from "@/lib/types";
+import type {
+  AboutPage,
+  AboutSection,
+  Car,
+  CarImage,
+  CarStatus,
+  ImagePosition,
+  Lead,
+} from "@/lib/types";
 import type { SiteSettingsInput } from "@/lib/site";
 import { getDB, newId, nowIso } from "./env";
 
@@ -492,6 +500,170 @@ export async function upsertSiteSettings(input: SiteSettingsInput): Promise<void
       now,
     )
     .run();
+}
+
+// ---------------------------------------------------------------------------
+// About page + sections
+// ---------------------------------------------------------------------------
+interface AboutSectionRow {
+  id: string;
+  title: string;
+  body: string | null;
+  image_url: string | null;
+  image_r2_key: string | null;
+  image_alt: string | null;
+  image_position: string;
+  sort_order: number;
+  is_published: number;
+}
+
+function mapAboutSection(r: AboutSectionRow): AboutSection {
+  return {
+    id: r.id,
+    title: r.title,
+    body: r.body,
+    image_url: r.image_url,
+    image_r2_key: r.image_r2_key,
+    image_alt: r.image_alt,
+    image_position: (r.image_position as ImagePosition) ?? "left",
+    sort_order: r.sort_order,
+    is_published: r.is_published === 1,
+  };
+}
+
+export async function getAboutPage(): Promise<AboutPage | null> {
+  const db = getDB();
+  const row = await db
+    .prepare(
+      `SELECT hero_title, intro, seo_title, seo_description FROM about_page WHERE id = 'default'`,
+    )
+    .first<{
+      hero_title: string | null;
+      intro: string | null;
+      seo_title: string | null;
+      seo_description: string | null;
+    }>();
+  if (!row) return null;
+  return {
+    hero_title: row.hero_title ?? "",
+    intro: row.intro ?? "",
+    seo_title: row.seo_title ?? "",
+    seo_description: row.seo_description ?? "",
+  };
+}
+
+export async function upsertAboutPage(input: AboutPage): Promise<void> {
+  const db = getDB();
+  await db
+    .prepare(
+      `INSERT INTO about_page (id, hero_title, intro, seo_title, seo_description, updated_at)
+       VALUES ('default', ?, ?, ?, ?, ?)
+       ON CONFLICT (id) DO UPDATE SET
+         hero_title=excluded.hero_title, intro=excluded.intro,
+         seo_title=excluded.seo_title, seo_description=excluded.seo_description,
+         updated_at=excluded.updated_at`,
+    )
+    .bind(input.hero_title, input.intro, input.seo_title, input.seo_description, nowIso())
+    .run();
+}
+
+export async function listAboutSections(publishedOnly: boolean): Promise<AboutSection[]> {
+  const db = getDB();
+  const where = publishedOnly ? "WHERE is_published = 1" : "";
+  const { results } = await db
+    .prepare(
+      `SELECT id, title, body, image_url, image_r2_key, image_alt, image_position, sort_order, is_published
+       FROM about_sections ${where} ORDER BY sort_order, title`,
+    )
+    .all<AboutSectionRow>();
+  return results.map(mapAboutSection);
+}
+
+export interface AboutSectionWriteInput {
+  title: string;
+  body?: string | null;
+  image_url?: string | null;
+  image_r2_key?: string | null;
+  image_alt?: string | null;
+  image_position: ImagePosition;
+  sort_order: number;
+  is_published: boolean;
+}
+
+/** Returns the R2 key that WAS attached (if any) before this write, for cleanup. */
+export async function upsertAboutSection(
+  input: AboutSectionWriteInput,
+  id?: string,
+): Promise<{ id: string; previousR2Key: string | null }> {
+  const db = getDB();
+  const now = nowIso();
+  let previousR2Key: string | null = null;
+
+  if (id) {
+    const prev = await db
+      .prepare(`SELECT image_r2_key FROM about_sections WHERE id = ?`)
+      .bind(id)
+      .first<{ image_r2_key: string | null }>();
+    // If the image changed, the old R2 object can be cleaned up by the caller.
+    if (prev?.image_r2_key && prev.image_r2_key !== (input.image_r2_key ?? null)) {
+      previousR2Key = prev.image_r2_key;
+    }
+    await db
+      .prepare(
+        `UPDATE about_sections SET title=?, body=?, image_url=?, image_r2_key=?, image_alt=?,
+           image_position=?, sort_order=?, is_published=?, updated_at=? WHERE id=?`,
+      )
+      .bind(
+        input.title,
+        input.body ?? null,
+        input.image_url ?? null,
+        input.image_r2_key ?? null,
+        input.image_alt ?? null,
+        input.image_position,
+        input.sort_order,
+        input.is_published ? 1 : 0,
+        now,
+        id,
+      )
+      .run();
+    return { id, previousR2Key };
+  }
+
+  const newSectionId = newId();
+  await db
+    .prepare(
+      `INSERT INTO about_sections (id, title, body, image_url, image_r2_key, image_alt, image_position, sort_order, is_published, created_at, updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+    )
+    .bind(
+      newSectionId,
+      input.title,
+      input.body ?? null,
+      input.image_url ?? null,
+      input.image_r2_key ?? null,
+      input.image_alt ?? null,
+      input.image_position,
+      input.sort_order,
+      input.is_published ? 1 : 0,
+      now,
+      now,
+    )
+    .run();
+  return { id: newSectionId, previousR2Key: null };
+}
+
+export async function getAboutSectionR2Key(id: string): Promise<string | null> {
+  const db = getDB();
+  const row = await db
+    .prepare(`SELECT image_r2_key FROM about_sections WHERE id = ?`)
+    .bind(id)
+    .first<{ image_r2_key: string | null }>();
+  return row?.image_r2_key ?? null;
+}
+
+export async function deleteAboutSection(id: string): Promise<void> {
+  const db = getDB();
+  await db.prepare(`DELETE FROM about_sections WHERE id = ?`).bind(id).run();
 }
 
 // ---------------------------------------------------------------------------

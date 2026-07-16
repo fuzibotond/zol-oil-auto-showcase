@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as MasiniRouteImport } from './routes/masini'
+import { Route as DespreNoiRouteImport } from './routes/despre-noi'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -23,6 +24,7 @@ import { Route as ApiUploadRouteImport } from './routes/api.upload'
 import { Route as AdminSetariRouteImport } from './routes/admin.setari'
 import { Route as AdminMasiniRouteImport } from './routes/admin.masini'
 import { Route as AdminLeaduriRouteImport } from './routes/admin.leaduri'
+import { Route as AdminDespreRouteImport } from './routes/admin.despre'
 import { Route as AdminMasiniIndexRouteImport } from './routes/admin.masini.index'
 import { Route as AdminMasiniNouRouteImport } from './routes/admin.masini.nou'
 import { Route as AdminMasiniIdEditRouteImport } from './routes/admin.masini.$id.edit'
@@ -35,6 +37,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const MasiniRoute = MasiniRouteImport.update({
   id: '/masini',
   path: '/masini',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DespreNoiRoute = DespreNoiRouteImport.update({
+  id: '/despre-noi',
+  path: '/despre-noi',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactRoute = ContactRouteImport.update({
@@ -97,6 +104,11 @@ const AdminLeaduriRoute = AdminLeaduriRouteImport.update({
   path: '/leaduri',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminDespreRoute = AdminDespreRouteImport.update({
+  id: '/despre',
+  path: '/despre',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminMasiniIndexRoute = AdminMasiniIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -118,8 +130,10 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
+  '/despre-noi': typeof DespreNoiRoute
   '/masini': typeof MasiniRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/despre': typeof AdminDespreRoute
   '/admin/leaduri': typeof AdminLeaduriRoute
   '/admin/masini': typeof AdminMasiniRouteWithChildren
   '/admin/setari': typeof AdminSetariRoute
@@ -136,7 +150,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
+  '/despre-noi': typeof DespreNoiRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/despre': typeof AdminDespreRoute
   '/admin/leaduri': typeof AdminLeaduriRoute
   '/admin/setari': typeof AdminSetariRoute
   '/api/upload': typeof ApiUploadRoute
@@ -154,8 +170,10 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
+  '/despre-noi': typeof DespreNoiRoute
   '/masini': typeof MasiniRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/despre': typeof AdminDespreRoute
   '/admin/leaduri': typeof AdminLeaduriRoute
   '/admin/masini': typeof AdminMasiniRouteWithChildren
   '/admin/setari': typeof AdminSetariRoute
@@ -175,8 +193,10 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/contact'
+    | '/despre-noi'
     | '/masini'
     | '/sitemap.xml'
+    | '/admin/despre'
     | '/admin/leaduri'
     | '/admin/masini'
     | '/admin/setari'
@@ -193,7 +213,9 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/contact'
+    | '/despre-noi'
     | '/sitemap.xml'
+    | '/admin/despre'
     | '/admin/leaduri'
     | '/admin/setari'
     | '/api/upload'
@@ -210,8 +232,10 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/contact'
+    | '/despre-noi'
     | '/masini'
     | '/sitemap.xml'
+    | '/admin/despre'
     | '/admin/leaduri'
     | '/admin/masini'
     | '/admin/setari'
@@ -230,6 +254,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
   ContactRoute: typeof ContactRoute
+  DespreNoiRoute: typeof DespreNoiRoute
   MasiniRoute: typeof MasiniRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiUploadRoute: typeof ApiUploadRoute
@@ -250,6 +275,13 @@ declare module '@tanstack/react-router' {
       path: '/masini'
       fullPath: '/masini'
       preLoaderRoute: typeof MasiniRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/despre-noi': {
+      id: '/despre-noi'
+      path: '/despre-noi'
+      fullPath: '/despre-noi'
+      preLoaderRoute: typeof DespreNoiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contact': {
@@ -336,6 +368,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLeaduriRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/despre': {
+      id: '/admin/despre'
+      path: '/despre'
+      fullPath: '/admin/despre'
+      preLoaderRoute: typeof AdminDespreRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/masini/': {
       id: '/admin/masini/'
       path: '/'
@@ -377,6 +416,7 @@ const AdminMasiniRouteWithChildren = AdminMasiniRoute._addFileChildren(
 )
 
 interface AdminRouteChildren {
+  AdminDespreRoute: typeof AdminDespreRoute
   AdminLeaduriRoute: typeof AdminLeaduriRoute
   AdminMasiniRoute: typeof AdminMasiniRouteWithChildren
   AdminSetariRoute: typeof AdminSetariRoute
@@ -384,6 +424,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminDespreRoute: AdminDespreRoute,
   AdminLeaduriRoute: AdminLeaduriRoute,
   AdminMasiniRoute: AdminMasiniRouteWithChildren,
   AdminSetariRoute: AdminSetariRoute,
@@ -410,6 +451,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
   ContactRoute: ContactRoute,
+  DespreNoiRoute: DespreNoiRoute,
   MasiniRoute: MasiniRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiUploadRoute: ApiUploadRoute,
