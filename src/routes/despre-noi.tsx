@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Phone, MessageCircle, MapPin, Mail } from "lucide-react";
 import { getAbout } from "@/lib/api/about.functions";
 import { useSiteSettings } from "@/hooks/use-site-settings";
+import { useCompanyInfo } from "@/hooks/use-company-info";
 import { SITE } from "@/lib/site";
 import type { AboutSection } from "@/lib/types";
 
@@ -29,6 +30,21 @@ export const Route = createFileRoute("/despre-noi")({
 function AboutPage() {
   const { page, sections } = Route.useLoaderData();
   const { settings } = useSiteSettings();
+  const { company } = useCompanyInfo();
+
+  const officialRows = company
+    ? (
+        [
+          ["Denumire legală", [company.legal_name, company.entity_type].filter(Boolean).join(" ")],
+          ["CUI / CIF", company.cui],
+          ["Registrul Comerțului", company.reg_com],
+          ["Sediu social", company.registered_address],
+          ["Punct de lucru", company.workpoint_address],
+          ["Email oficial", company.email],
+          ["Telefon oficial", company.phone],
+        ] as const
+      ).filter(([, v]) => Boolean(v && v.trim()))
+    : [];
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -75,6 +91,21 @@ function AboutPage() {
             <Section key={s.id} section={s} />
           ))}
         </div>
+      )}
+
+      {/* Official company info — only real, filled-in data is shown */}
+      {officialRows.length > 0 && (
+        <section className="mt-16 surface-card p-6 sm:p-8">
+          <h2 className="font-display text-2xl font-bold tracking-tight">Informații oficiale</h2>
+          <dl className="mt-4 grid gap-x-8 gap-y-3 sm:grid-cols-2">
+            {officialRows.map(([label, value]) => (
+              <div key={label}>
+                <dt className="text-xs text-muted-foreground">{label}</dt>
+                <dd className="text-sm font-medium">{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
       )}
 
       {/* Contact CTA */}

@@ -68,6 +68,30 @@ export interface AboutSection {
   is_published: boolean;
 }
 
+/**
+ * Official company/legal information. Empty string = not provided yet.
+ * `verified_fields` holds the names of fields the owner has explicitly
+ * confirmed as correct — anything else counts as "needs verification".
+ */
+export interface CompanyInfo {
+  trading_name: string;
+  legal_name: string;
+  entity_type: string;
+  cui: string;
+  reg_com: string;
+  registered_address: string;
+  workpoint_address: string;
+  county: string;
+  country: string;
+  phone: string;
+  email: string;
+  website: string;
+  vat_status: string;
+  dpo_email: string;
+  complaints_info: string;
+  verified_fields: string[];
+}
+
 export interface SiteSettings {
   id: string;
   contact_email: string;

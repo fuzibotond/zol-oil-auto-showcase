@@ -12,6 +12,7 @@ import type {
   Car,
   CarImage,
   CarStatus,
+  CompanyInfo,
   ImagePosition,
   Lead,
 } from "@/lib/types";
@@ -499,6 +500,100 @@ export async function upsertSiteSettings(input: SiteSettingsInput): Promise<void
       input.waze_url ?? "",
       JSON.stringify(input.opening_hours ?? []),
       JSON.stringify(input.social_links ?? []),
+      now,
+      now,
+    )
+    .run();
+}
+
+// ---------------------------------------------------------------------------
+// Company info (official/legal data)
+// ---------------------------------------------------------------------------
+interface CompanyInfoRow {
+  trading_name: string | null;
+  legal_name: string | null;
+  entity_type: string | null;
+  cui: string | null;
+  reg_com: string | null;
+  registered_address: string | null;
+  workpoint_address: string | null;
+  county: string | null;
+  country: string | null;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+  vat_status: string | null;
+  dpo_email: string | null;
+  complaints_info: string | null;
+  verified_fields: string | null; // JSON array
+}
+
+export async function getCompanyInfo(): Promise<CompanyInfo | null> {
+  const db = getDB();
+  const row = await db
+    .prepare(
+      `SELECT trading_name, legal_name, entity_type, cui, reg_com, registered_address,
+              workpoint_address, county, country, phone, email, website, vat_status,
+              dpo_email, complaints_info, verified_fields
+       FROM company_info WHERE id = 'default'`,
+    )
+    .first<CompanyInfoRow>();
+  if (!row) return null;
+  return {
+    trading_name: row.trading_name ?? "",
+    legal_name: row.legal_name ?? "",
+    entity_type: row.entity_type ?? "",
+    cui: row.cui ?? "",
+    reg_com: row.reg_com ?? "",
+    registered_address: row.registered_address ?? "",
+    workpoint_address: row.workpoint_address ?? "",
+    county: row.county ?? "",
+    country: row.country ?? "",
+    phone: row.phone ?? "",
+    email: row.email ?? "",
+    website: row.website ?? "",
+    vat_status: row.vat_status ?? "",
+    dpo_email: row.dpo_email ?? "",
+    complaints_info: row.complaints_info ?? "",
+    verified_fields: safeJsonArray<string>(row.verified_fields),
+  };
+}
+
+export async function upsertCompanyInfo(input: CompanyInfo): Promise<void> {
+  const db = getDB();
+  const now = nowIso();
+  await db
+    .prepare(
+      `INSERT INTO company_info (id, trading_name, legal_name, entity_type, cui, reg_com,
+         registered_address, workpoint_address, county, country, phone, email, website,
+         vat_status, dpo_email, complaints_info, verified_fields, created_at, updated_at)
+       VALUES ('default', ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+       ON CONFLICT (id) DO UPDATE SET
+         trading_name=excluded.trading_name, legal_name=excluded.legal_name,
+         entity_type=excluded.entity_type, cui=excluded.cui, reg_com=excluded.reg_com,
+         registered_address=excluded.registered_address, workpoint_address=excluded.workpoint_address,
+         county=excluded.county, country=excluded.country, phone=excluded.phone,
+         email=excluded.email, website=excluded.website, vat_status=excluded.vat_status,
+         dpo_email=excluded.dpo_email, complaints_info=excluded.complaints_info,
+         verified_fields=excluded.verified_fields, updated_at=excluded.updated_at`,
+    )
+    .bind(
+      input.trading_name,
+      input.legal_name,
+      input.entity_type,
+      input.cui,
+      input.reg_com,
+      input.registered_address,
+      input.workpoint_address,
+      input.county,
+      input.country,
+      input.phone,
+      input.email,
+      input.website,
+      input.vat_status,
+      input.dpo_email,
+      input.complaints_info,
+      JSON.stringify(input.verified_fields ?? []),
       now,
       now,
     )

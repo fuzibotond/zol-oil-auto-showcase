@@ -11,6 +11,7 @@ import {
   Plus,
   Settings,
   Info,
+  Building2,
 } from "lucide-react";
 
 // Access to /admin* is gated at the edge by Cloudflare Access (Zero Trust).
@@ -74,6 +75,7 @@ function AdminLayout() {
     { to: "/admin/masini" as const, label: "Mașini", icon: Car },
     { to: "/admin/leaduri" as const, label: "Leaduri", icon: Users },
     { to: "/admin/despre" as const, label: "Despre noi", icon: Info },
+    { to: "/admin/companie" as const, label: "Companie", icon: Building2 },
     { to: "/admin/setari" as const, label: "Setări", icon: Settings },
   ];
 
