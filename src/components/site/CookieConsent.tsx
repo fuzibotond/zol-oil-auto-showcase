@@ -25,7 +25,8 @@ export function CookieConsent() {
     <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/95 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <p className="text-xs text-muted-foreground sm:text-sm">
-          Folosim cookie-uri pentru funcționare, analiză trafic și îmbunătățirea experienței. Poți accepta toate cookie-urile sau doar cele necesare.
+          Folosim doar cookie-uri necesare pentru funcționarea site-ului. Nu folosim cookie-uri de
+          analiză sau marketing.
         </p>
         <div className="flex items-center gap-2">
           <button

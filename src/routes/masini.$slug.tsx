@@ -184,12 +184,14 @@ function CarDetail() {
                 {images.length > 1 && (
                   <>
                     <button
+                      aria-label="Imaginea anterioară"
                       onClick={() => setIdx((i) => (i - 1 + images.length) % images.length)}
                       className="absolute left-3 top-1/2 -translate-y-1/2 h-10 w-10 inline-flex items-center justify-center rounded-full bg-background/90 backdrop-blur shadow-md hover:bg-background transition-colors"
                     >
                       <ChevronLeft className="h-5 w-5" />
                     </button>
                     <button
+                      aria-label="Imaginea următoare"
                       onClick={() => setIdx((i) => (i + 1) % images.length)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 inline-flex items-center justify-center rounded-full bg-background/90 backdrop-blur shadow-md hover:bg-background transition-colors"
                     >
