@@ -15,6 +15,7 @@ import type {
   CompanyInfo,
   ImagePosition,
   Lead,
+  LegalPageDoc,
 } from "@/lib/types";
 import type { SiteSettingsInput } from "@/lib/site";
 import { getDB, newId, nowIso } from "./env";
@@ -762,6 +763,70 @@ export async function getAboutSectionR2Key(id: string): Promise<string | null> {
 export async function deleteAboutSection(id: string): Promise<void> {
   const db = getDB();
   await db.prepare(`DELETE FROM about_sections WHERE id = ?`).bind(id).run();
+}
+
+// ---------------------------------------------------------------------------
+// Legal pages (privacy, cookie, terms)
+// ---------------------------------------------------------------------------
+interface LegalPageRow {
+  slug: string;
+  title: string;
+  body: string;
+  version: number;
+  needs_review: number;
+  updated_at: string;
+}
+
+function mapLegal(r: LegalPageRow): LegalPageDoc {
+  return {
+    slug: r.slug,
+    title: r.title,
+    body: r.body,
+    version: r.version,
+    needs_review: r.needs_review === 1,
+    updated_at: r.updated_at,
+  };
+}
+
+export async function getLegalPage(slug: string): Promise<LegalPageDoc | null> {
+  const db = getDB();
+  const row = await db
+    .prepare(
+      `SELECT slug, title, body, version, needs_review, updated_at FROM legal_pages WHERE slug = ?`,
+    )
+    .bind(slug)
+    .first<LegalPageRow>();
+  return row ? mapLegal(row) : null;
+}
+
+export async function listLegalPages(): Promise<LegalPageDoc[]> {
+  const db = getDB();
+  const { results } = await db
+    .prepare(
+      `SELECT slug, title, body, version, needs_review, updated_at FROM legal_pages ORDER BY slug`,
+    )
+    .all<LegalPageRow>();
+  return results.map(mapLegal);
+}
+
+export async function upsertLegalPage(
+  slug: string,
+  title: string,
+  body: string,
+  needsReview: boolean,
+): Promise<void> {
+  const db = getDB();
+  const now = nowIso();
+  await db
+    .prepare(
+      `INSERT INTO legal_pages (slug, title, body, version, needs_review, updated_at)
+       VALUES (?, ?, ?, 1, ?, ?)
+       ON CONFLICT (slug) DO UPDATE SET
+         title=excluded.title, body=excluded.body, needs_review=excluded.needs_review,
+         version=legal_pages.version + 1, updated_at=excluded.updated_at`,
+    )
+    .bind(slug, title, body, needsReview ? 1 : 0, now)
+    .run();
 }
 
 // ---------------------------------------------------------------------------

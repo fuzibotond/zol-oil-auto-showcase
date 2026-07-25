@@ -9,10 +9,13 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermeniRouteImport } from './routes/termeni'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as PoliticaCookieRouteImport } from './routes/politica-cookie'
 import { Route as MasiniRouteImport } from './routes/masini'
 import { Route as DespreNoiRouteImport } from './routes/despre-noi'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as ConfidentialitateRouteImport } from './routes/confidentialitate'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -23,6 +26,7 @@ import { Route as ImgSplatRouteImport } from './routes/img.$'
 import { Route as ApiUploadRouteImport } from './routes/api.upload'
 import { Route as AdminSetariRouteImport } from './routes/admin.setari'
 import { Route as AdminMasiniRouteImport } from './routes/admin.masini'
+import { Route as AdminLegalRouteImport } from './routes/admin.legal'
 import { Route as AdminLeaduriRouteImport } from './routes/admin.leaduri'
 import { Route as AdminDespreRouteImport } from './routes/admin.despre'
 import { Route as AdminCompanieRouteImport } from './routes/admin.companie'
@@ -30,9 +34,19 @@ import { Route as AdminMasiniIndexRouteImport } from './routes/admin.masini.inde
 import { Route as AdminMasiniNouRouteImport } from './routes/admin.masini.nou'
 import { Route as AdminMasiniIdEditRouteImport } from './routes/admin.masini.$id.edit'
 
+const TermeniRoute = TermeniRouteImport.update({
+  id: '/termeni',
+  path: '/termeni',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PoliticaCookieRoute = PoliticaCookieRouteImport.update({
+  id: '/politica-cookie',
+  path: '/politica-cookie',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MasiniRoute = MasiniRouteImport.update({
@@ -48,6 +62,11 @@ const DespreNoiRoute = DespreNoiRouteImport.update({
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfidentialitateRoute = ConfidentialitateRouteImport.update({
+  id: '/confidentialitate',
+  path: '/confidentialitate',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -100,6 +119,11 @@ const AdminMasiniRoute = AdminMasiniRouteImport.update({
   path: '/masini',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminLegalRoute = AdminLegalRouteImport.update({
+  id: '/legal',
+  path: '/legal',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminLeaduriRoute = AdminLeaduriRouteImport.update({
   id: '/leaduri',
   path: '/leaduri',
@@ -135,13 +159,17 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
+  '/confidentialitate': typeof ConfidentialitateRoute
   '/contact': typeof ContactRoute
   '/despre-noi': typeof DespreNoiRoute
   '/masini': typeof MasiniRouteWithChildren
+  '/politica-cookie': typeof PoliticaCookieRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/termeni': typeof TermeniRoute
   '/admin/companie': typeof AdminCompanieRoute
   '/admin/despre': typeof AdminDespreRoute
   '/admin/leaduri': typeof AdminLeaduriRoute
+  '/admin/legal': typeof AdminLegalRoute
   '/admin/masini': typeof AdminMasiniRouteWithChildren
   '/admin/setari': typeof AdminSetariRoute
   '/api/upload': typeof ApiUploadRoute
@@ -156,12 +184,16 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/confidentialitate': typeof ConfidentialitateRoute
   '/contact': typeof ContactRoute
   '/despre-noi': typeof DespreNoiRoute
+  '/politica-cookie': typeof PoliticaCookieRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/termeni': typeof TermeniRoute
   '/admin/companie': typeof AdminCompanieRoute
   '/admin/despre': typeof AdminDespreRoute
   '/admin/leaduri': typeof AdminLeaduriRoute
+  '/admin/legal': typeof AdminLegalRoute
   '/admin/setari': typeof AdminSetariRoute
   '/api/upload': typeof ApiUploadRoute
   '/img/$': typeof ImgSplatRoute
@@ -177,13 +209,17 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
+  '/confidentialitate': typeof ConfidentialitateRoute
   '/contact': typeof ContactRoute
   '/despre-noi': typeof DespreNoiRoute
   '/masini': typeof MasiniRouteWithChildren
+  '/politica-cookie': typeof PoliticaCookieRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/termeni': typeof TermeniRoute
   '/admin/companie': typeof AdminCompanieRoute
   '/admin/despre': typeof AdminDespreRoute
   '/admin/leaduri': typeof AdminLeaduriRoute
+  '/admin/legal': typeof AdminLegalRoute
   '/admin/masini': typeof AdminMasiniRouteWithChildren
   '/admin/setari': typeof AdminSetariRoute
   '/api/upload': typeof ApiUploadRoute
@@ -201,13 +237,17 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/confidentialitate'
     | '/contact'
     | '/despre-noi'
     | '/masini'
+    | '/politica-cookie'
     | '/sitemap.xml'
+    | '/termeni'
     | '/admin/companie'
     | '/admin/despre'
     | '/admin/leaduri'
+    | '/admin/legal'
     | '/admin/masini'
     | '/admin/setari'
     | '/api/upload'
@@ -222,12 +262,16 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/confidentialitate'
     | '/contact'
     | '/despre-noi'
+    | '/politica-cookie'
     | '/sitemap.xml'
+    | '/termeni'
     | '/admin/companie'
     | '/admin/despre'
     | '/admin/leaduri'
+    | '/admin/legal'
     | '/admin/setari'
     | '/api/upload'
     | '/img/$'
@@ -242,13 +286,17 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/confidentialitate'
     | '/contact'
     | '/despre-noi'
     | '/masini'
+    | '/politica-cookie'
     | '/sitemap.xml'
+    | '/termeni'
     | '/admin/companie'
     | '/admin/despre'
     | '/admin/leaduri'
+    | '/admin/legal'
     | '/admin/masini'
     | '/admin/setari'
     | '/api/upload'
@@ -265,21 +313,38 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ConfidentialitateRoute: typeof ConfidentialitateRoute
   ContactRoute: typeof ContactRoute
   DespreNoiRoute: typeof DespreNoiRoute
   MasiniRoute: typeof MasiniRouteWithChildren
+  PoliticaCookieRoute: typeof PoliticaCookieRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TermeniRoute: typeof TermeniRoute
   ApiUploadRoute: typeof ApiUploadRoute
   ImgSplatRoute: typeof ImgSplatRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/termeni': {
+      id: '/termeni'
+      path: '/termeni'
+      fullPath: '/termeni'
+      preLoaderRoute: typeof TermeniRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/politica-cookie': {
+      id: '/politica-cookie'
+      path: '/politica-cookie'
+      fullPath: '/politica-cookie'
+      preLoaderRoute: typeof PoliticaCookieRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/masini': {
@@ -301,6 +366,13 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/confidentialitate': {
+      id: '/confidentialitate'
+      path: '/confidentialitate'
+      fullPath: '/confidentialitate'
+      preLoaderRoute: typeof ConfidentialitateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -373,6 +445,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMasiniRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/legal': {
+      id: '/admin/legal'
+      path: '/legal'
+      fullPath: '/admin/legal'
+      preLoaderRoute: typeof AdminLegalRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/leaduri': {
       id: '/admin/leaduri'
       path: '/leaduri'
@@ -438,6 +517,7 @@ interface AdminRouteChildren {
   AdminCompanieRoute: typeof AdminCompanieRoute
   AdminDespreRoute: typeof AdminDespreRoute
   AdminLeaduriRoute: typeof AdminLeaduriRoute
+  AdminLegalRoute: typeof AdminLegalRoute
   AdminMasiniRoute: typeof AdminMasiniRouteWithChildren
   AdminSetariRoute: typeof AdminSetariRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -447,6 +527,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCompanieRoute: AdminCompanieRoute,
   AdminDespreRoute: AdminDespreRoute,
   AdminLeaduriRoute: AdminLeaduriRoute,
+  AdminLegalRoute: AdminLegalRoute,
   AdminMasiniRoute: AdminMasiniRouteWithChildren,
   AdminSetariRoute: AdminSetariRoute,
   AdminIndexRoute: AdminIndexRoute,
@@ -471,10 +552,13 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
+  ConfidentialitateRoute: ConfidentialitateRoute,
   ContactRoute: ContactRoute,
   DespreNoiRoute: DespreNoiRoute,
   MasiniRoute: MasiniRouteWithChildren,
+  PoliticaCookieRoute: PoliticaCookieRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TermeniRoute: TermeniRoute,
   ApiUploadRoute: ApiUploadRoute,
   ImgSplatRoute: ImgSplatRoute,
 }

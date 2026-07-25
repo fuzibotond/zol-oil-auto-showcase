@@ -4,10 +4,13 @@ Derived from `QA_TEST_REPORT.md`, `BUG_REPORT.md`, `PERFORMANCE_REPORT.md`.
 
 ## Must fix before launch
 
-- [ ] **Legal/GDPR pages** — privacy policy, cookie policy, terms/legal notice (RO), linked in the
-      footer; wire the lead-form consent line to the privacy policy. (BUG H-1)
-- [ ] **Real company legal data** — enter legal name, CUI/CIF, Reg. Com., registered office in
-      **Admin → Companie** and mark them verified. Nothing is invented by the app. (owner data)
+- [x] **Legal/GDPR pages** — privacy, cookie, terms built at `/confidentialitate`,
+      `/politica-cookie`, `/termeni`, linked in footer + sitemap; lead-form consent links to the
+      privacy policy. **Owner action:** have the text reviewed by a RO professional, then untick
+      "Necesită verificare juridică" in **Admin → Pagini legale**. (BUG H-1)
+- [ ] **Verify company legal data** — legal name/CUI/Reg.Com./office were seeded from zoloil.ro but
+      are **unverified**. Confirm them in **Admin → Companie** and tick the checklist. Add the
+      official email + VAT status (not found on the old site).
 - [ ] **Homepage hero image** — replace the 2.9 MB `parc-auto.png` with a resized WebP/AVIF
       (<300 KB) and set width/height. (BUG H-2)
 - [ ] **Cloudflare Access** configured over `/admin` with the owner's email in the policy, and

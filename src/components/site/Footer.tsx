@@ -81,7 +81,26 @@ export function Footer() {
         </div>
       </div>
       <div className="border-t border-border">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-4 text-xs text-muted-foreground space-y-1.5">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-4 text-xs text-muted-foreground space-y-2">
+          <nav className="flex flex-wrap gap-x-4 gap-y-1">
+            <Link to="/confidentialitate" className="hover:text-foreground">
+              Confidențialitate
+            </Link>
+            <Link to="/politica-cookie" className="hover:text-foreground">
+              Cookie-uri
+            </Link>
+            <Link to="/termeni" className="hover:text-foreground">
+              Termeni și condiții
+            </Link>
+            <a
+              href="https://anpc.ro"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:text-foreground"
+            >
+              ANPC
+            </a>
+          </nav>
           {legalLine && <div>{legalLine}</div>}
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>

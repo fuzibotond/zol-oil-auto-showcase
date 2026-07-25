@@ -20,7 +20,10 @@ Severity: Critical / High / Medium / Low. Status: Open / Fixed.
   GDPR privacy notice. Legally required before promotion.
 - **Fix:** Build editable `/confidentialitate`, `/politica-cookie`, `/termeni` (D1 `legal_pages`
   table already exists). Link them in the footer. Legal text needs owner/lawyer review.
-- **Status:** Open (Phase 5, not yet implemented).
+- **Status:** **Fixed (implementation)** — three editable RO legal pages built and reachable,
+  linked in the footer + sitemap, lead-form consent links to the privacy policy, admin editor at
+  `/admin/legal`. Company identity seeded from zoloil.ro (unverified). **Remaining:** the seeded
+  legal text is `needs_review = 1` and must be reviewed by a Romanian professional before promotion.
 
 ### H-2 · 2.9 MB homepage hero image (`public/parc-auto.png`)
 - **Severity:** High · **Priority:** P1 · **Component:** homepage (`index.tsx`)

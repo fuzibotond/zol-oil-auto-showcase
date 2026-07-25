@@ -1,9 +1,18 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { submitLead } from "@/lib/api/cars.functions";
 import { toast } from "sonner";
 
-export function LeadForm({ carId, carTitle, source = "website" }: { carId?: string; carTitle?: string; source?: string }) {
+export function LeadForm({
+  carId,
+  carTitle,
+  source = "website",
+}: {
+  carId?: string;
+  carTitle?: string;
+  source?: string;
+}) {
   const submit = useServerFn(submitLead);
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -19,7 +28,8 @@ export function LeadForm({ carId, carTitle, source = "website" }: { carId?: stri
           name: String(fd.get("name") ?? ""),
           phone: String(fd.get("phone") ?? ""),
           email: String(fd.get("email") ?? ""),
-          message: String(fd.get("message") ?? "") || (carTitle ? `Sunt interesat de ${carTitle}` : ""),
+          message:
+            String(fd.get("message") ?? "") || (carTitle ? `Sunt interesat de ${carTitle}` : ""),
           source,
           honeypot: String(fd.get("honeypot") ?? ""),
         },
@@ -29,7 +39,8 @@ export function LeadForm({ carId, carTitle, source = "website" }: { carId?: stri
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : null;
       // Show Zod validation messages (e.g. invalid phone) verbatim; fall back to generic text
-      const userMsg = msg && msg.length < 200 ? msg : "A apărut o eroare. Încearcă din nou sau sună-ne direct.";
+      const userMsg =
+        msg && msg.length < 200 ? msg : "A apărut o eroare. Încearcă din nou sau sună-ne direct.";
       toast.error(userMsg);
     } finally {
       setLoading(false);
@@ -40,7 +51,9 @@ export function LeadForm({ carId, carTitle, source = "website" }: { carId?: stri
     return (
       <div className="surface-card p-6 text-center">
         <div className="font-display text-lg font-semibold">Mulțumim!</div>
-        <p className="mt-1 text-sm text-muted-foreground">Mesajul tău a fost trimis. Te vom contacta în scurt timp.</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Mesajul tău a fost trimis. Te vom contacta în scurt timp.
+        </p>
       </div>
     );
   }
@@ -82,15 +95,35 @@ export function LeadForm({ carId, carTitle, source = "website" }: { carId?: stri
       </button>
       <p className="text-[11px] text-muted-foreground text-center">
         Apăsând „Trimite mesajul" ești de acord să te contactăm referitor la mașina solicitată.
+        Prelucrăm datele conform{" "}
+        <Link to="/confidentialitate" className="underline hover:text-foreground">
+          Politicii de confidențialitate
+        </Link>
+        .
       </p>
     </form>
   );
 }
 
-function Field({ name, label, type = "text", required, maxLength }: { name: string; label: string; type?: string; required?: boolean; maxLength?: number }) {
+function Field({
+  name,
+  label,
+  type = "text",
+  required,
+  maxLength,
+}: {
+  name: string;
+  label: string;
+  type?: string;
+  required?: boolean;
+  maxLength?: number;
+}) {
   return (
     <div>
-      <label className="block text-xs font-medium text-muted-foreground mb-1">{label}{required && " *"}</label>
+      <label className="block text-xs font-medium text-muted-foreground mb-1">
+        {label}
+        {required && " *"}
+      </label>
       <input
         name={name}
         type={type}

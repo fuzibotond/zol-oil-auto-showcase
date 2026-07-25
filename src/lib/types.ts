@@ -92,6 +92,15 @@ export interface CompanyInfo {
   verified_fields: string[];
 }
 
+export interface LegalPageDoc {
+  slug: string;
+  title: string;
+  body: string; // plain text, rendered safely (no HTML)
+  version: number;
+  needs_review: boolean;
+  updated_at: string;
+}
+
 export interface SiteSettings {
   id: string;
   contact_email: string;
