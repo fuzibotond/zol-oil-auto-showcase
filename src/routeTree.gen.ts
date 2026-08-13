@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermeniRouteImport } from './routes/termeni'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as PoliticaCookieRouteImport } from './routes/politica-cookie'
 import { Route as MasiniRouteImport } from './routes/masini'
 import { Route as DespreNoiRouteImport } from './routes/despre-noi'
@@ -42,6 +43,11 @@ const TermeniRoute = TermeniRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
+  id: '/robots.txt',
+  path: '/robots.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PoliticaCookieRoute = PoliticaCookieRouteImport.update({
@@ -164,6 +170,7 @@ export interface FileRoutesByFullPath {
   '/despre-noi': typeof DespreNoiRoute
   '/masini': typeof MasiniRouteWithChildren
   '/politica-cookie': typeof PoliticaCookieRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/termeni': typeof TermeniRoute
   '/admin/companie': typeof AdminCompanieRoute
@@ -188,6 +195,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/despre-noi': typeof DespreNoiRoute
   '/politica-cookie': typeof PoliticaCookieRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/termeni': typeof TermeniRoute
   '/admin/companie': typeof AdminCompanieRoute
@@ -214,6 +222,7 @@ export interface FileRoutesById {
   '/despre-noi': typeof DespreNoiRoute
   '/masini': typeof MasiniRouteWithChildren
   '/politica-cookie': typeof PoliticaCookieRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/termeni': typeof TermeniRoute
   '/admin/companie': typeof AdminCompanieRoute
@@ -242,6 +251,7 @@ export interface FileRouteTypes {
     | '/despre-noi'
     | '/masini'
     | '/politica-cookie'
+    | '/robots.txt'
     | '/sitemap.xml'
     | '/termeni'
     | '/admin/companie'
@@ -266,6 +276,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/despre-noi'
     | '/politica-cookie'
+    | '/robots.txt'
     | '/sitemap.xml'
     | '/termeni'
     | '/admin/companie'
@@ -291,6 +302,7 @@ export interface FileRouteTypes {
     | '/despre-noi'
     | '/masini'
     | '/politica-cookie'
+    | '/robots.txt'
     | '/sitemap.xml'
     | '/termeni'
     | '/admin/companie'
@@ -318,6 +330,7 @@ export interface RootRouteChildren {
   DespreNoiRoute: typeof DespreNoiRoute
   MasiniRoute: typeof MasiniRouteWithChildren
   PoliticaCookieRoute: typeof PoliticaCookieRoute
+  RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermeniRoute: typeof TermeniRoute
   ApiUploadRoute: typeof ApiUploadRoute
@@ -338,6 +351,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/robots.txt': {
+      id: '/robots.txt'
+      path: '/robots.txt'
+      fullPath: '/robots.txt'
+      preLoaderRoute: typeof RobotsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/politica-cookie': {
@@ -557,6 +577,7 @@ const rootRouteChildren: RootRouteChildren = {
   DespreNoiRoute: DespreNoiRoute,
   MasiniRoute: MasiniRouteWithChildren,
   PoliticaCookieRoute: PoliticaCookieRoute,
+  RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermeniRoute: TermeniRoute,
   ApiUploadRoute: ApiUploadRoute,
