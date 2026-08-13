@@ -192,6 +192,13 @@ export async function getCarById(id: string): Promise<Car | null> {
   return mapCar(row, imgMap.get(row.id) ?? []);
 }
 
+export async function countCars(opts: { availableOnly?: boolean } = {}): Promise<number> {
+  const db = getDB();
+  const where = opts.availableOnly ? `WHERE status = 'disponibil'` : "";
+  const row = await db.prepare(`SELECT COUNT(*) AS n FROM cars ${where}`).first<{ n: number }>();
+  return row?.n ?? 0;
+}
+
 export async function listCarSlugs(): Promise<{ slug: string; updated_at: string }[]> {
   const db = getDB();
   const { results } = await db

@@ -2,7 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowRight, ShieldCheck, MapPin, Phone, Facebook } from "lucide-react";
-import { listCars } from "@/lib/api/cars.functions";
+import { listCars, countAvailableCars } from "@/lib/api/cars.functions";
 import { CarCard } from "@/components/site/CarCard";
 import { SITE, mapsEmbedUrl } from "@/lib/site";
 import { useSiteSettings } from "@/hooks/use-site-settings";
@@ -34,8 +34,13 @@ export const Route = createFileRoute("/")({
 
 function HomePage() {
   const fetchCars = useServerFn(listCars);
+  const fetchCount = useServerFn(countAvailableCars);
   const { settings } = useSiteSettings();
   const facebook = settings.social_links.find((x) => x.key === "facebook");
+  const { data: carCount = 0 } = useQuery({
+    queryKey: ["cars", "count"],
+    queryFn: () => fetchCount(),
+  });
   const { data: featured = [] } = useQuery({
     queryKey: ["cars", "featured"],
     queryFn: () => fetchCars({ data: { featured: true, limit: 6 } }),
@@ -302,7 +307,7 @@ function HomePage() {
                   color: DARK + "40",
                 }}
               >
-                01 / 50+
+                {carCount > 0 ? `01 / ${carCount}` : "01"}
               </div>
             </div>
           </div>
@@ -323,9 +328,11 @@ function HomePage() {
             }}
           >
             {[
-              { v: "50+", l: "Mașini în parc" },
-              { v: "10+", l: "Ani experiență" },
-              { v: "100%", l: "Verificate tehnic" },
+              // Softened, substantiable claims: real inventory count, factual founding
+              // year, and a non-absolute quality statement (no "100%").
+              { v: carCount > 0 ? String(carCount) : "—", l: "Mașini disponibile" },
+              { v: "Din 1994", l: "Experiență" },
+              { v: "Verificate", l: "tehnic la achiziție" },
               { v: SITE.city, l: SITE.county },
             ].map(({ v, l }) => (
               <div key={l}>

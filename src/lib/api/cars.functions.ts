@@ -23,6 +23,15 @@ export const getCarBySlug = createServerFn({ method: "GET" })
     return repo.getCarBySlug(slug);
   });
 
+export const countAvailableCars = createServerFn({ method: "GET" }).handler(async () => {
+  try {
+    const repo = await import("@/lib/db/repository");
+    return await repo.countCars({ availableOnly: true });
+  } catch {
+    return 0;
+  }
+});
+
 export const similarCars = createServerFn({ method: "GET" })
   .validator((input: { excludeId: string; brand: string }) => input)
   .handler(async ({ data }) => {
