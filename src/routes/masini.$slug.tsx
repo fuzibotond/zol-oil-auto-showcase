@@ -21,7 +21,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { getCarBySlug, similarCars } from "@/lib/api/cars.functions";
-import { fmtKm, fmtPrice, fmtNumber } from "@/lib/format";
+import { fmtKm, fmtPrice, fmtNumber, isRecent } from "@/lib/format";
 import { SITE } from "@/lib/site";
 import { StatusBadge } from "@/components/site/StatusBadge";
 import { LeadForm } from "@/components/site/LeadForm";
@@ -147,6 +147,11 @@ function CarDetail() {
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <StatusBadge status={car.status} />
+                {isRecent(car.created_at) && (
+                  <span className="rounded-full bg-accent px-2.5 py-1 text-xs font-medium text-accent-foreground">
+                    Nou
+                  </span>
+                )}
                 {car.is_featured && (
                   <span className="rounded-full bg-foreground/90 px-2.5 py-1 text-xs font-medium text-background">
                     Recomandat

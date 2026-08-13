@@ -1,10 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { Gauge, Fuel, Cog, Calendar } from "lucide-react";
 import type { Car } from "@/lib/types";
-import { fmtKm, fmtPrice } from "@/lib/format";
+import { fmtKm, fmtPrice, isRecent } from "@/lib/format";
 import { StatusBadge } from "./StatusBadge";
 
-const PLACEHOLDER = "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1200&q=80&auto=format&fit=crop";
+const PLACEHOLDER =
+  "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1200&q=80&auto=format&fit=crop";
 
 export function CarCard({ car }: { car: Car }) {
   const img = car.images?.[0]?.url ?? PLACEHOLDER;
@@ -21,8 +22,13 @@ export function CarCard({ car }: { car: Car }) {
           className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
           loading="lazy"
         />
-        <div className="absolute left-3 top-3 flex gap-2">
+        <div className="absolute left-3 top-3 flex flex-wrap gap-2">
           <StatusBadge status={car.status} />
+          {isRecent(car.created_at) && (
+            <span className="rounded-full bg-accent px-2.5 py-1 text-xs font-medium text-accent-foreground backdrop-blur">
+              Nou
+            </span>
+          )}
           {car.is_featured && (
             <span className="rounded-full bg-foreground/90 px-2.5 py-1 text-xs font-medium text-background backdrop-blur">
               Recomandat
@@ -39,7 +45,9 @@ export function CarCard({ car }: { car: Car }) {
             {car.version && <div className="text-sm text-muted-foreground">{car.version}</div>}
           </div>
           <div className="text-right">
-            <div className="font-display text-xl font-bold">{fmtPrice(car.price, car.currency)}</div>
+            <div className="font-display text-xl font-bold">
+              {fmtPrice(car.price, car.currency)}
+            </div>
           </div>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
