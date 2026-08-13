@@ -121,7 +121,7 @@ const CarInput = z.object({
   body_type: z.string().max(30).optional().nullable(),
   color: z.string().max(40).optional().nullable(),
   description: z.string().max(5000).optional().nullable(),
-  equipment: z.array(z.string().max(60)).default([]),
+  equipment: z.array(z.string().max(120)).default([]),
   status: z.string().min(1).max(20),
   is_featured: z.boolean().default(false),
   images: z.array(ImageInput).default([]),
