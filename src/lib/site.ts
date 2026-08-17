@@ -28,7 +28,7 @@ export const SITE = {
 // NOTE: do NOT add the SOL/ODR platform — it was discontinued and must not appear.
 export const SAL = {
   show: true,
-  url: "https://anpc.ro/ce-este-sal/",
+  url: "https://anpc.ro/sal/",
   label: "Soluționarea alternativă a litigiilor (SAL)",
 } as const;
 
