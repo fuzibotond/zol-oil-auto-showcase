@@ -26,10 +26,14 @@ export const SITE = {
 // ANPC SAL (alternative consumer dispute resolution). Simple enable/disable flag.
 // Set `show: false` to hide the footer element; update `url` if ANPC changes it.
 // NOTE: do NOT add the SOL/ODR platform — it was discontinued and must not appear.
+// Per ANPC (comunicat SAL / OPANPC 270/2026), online sellers display the official
+// SAL pictogram linking to the SAL complaints platform. `image` is the official
+// pictogram (public/sal-pictograma.png); if cleared, a text link is shown instead.
 export const SAL = {
   show: true,
-  url: "https://anpc.ro/sal/",
-  label: "Soluționarea alternativă a litigiilor (SAL)",
+  url: "https://reclamatiisal.anpc.ro",
+  image: "/sal-pictograma.png",
+  label: "ANPC — Soluționarea alternativă a litigiilor (SAL)",
 } as const;
 
 // Single source of truth for which contact-form fields are mandatory. Shared by

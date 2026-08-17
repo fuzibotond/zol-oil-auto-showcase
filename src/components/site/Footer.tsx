@@ -94,19 +94,23 @@ export function Footer() {
             <Link to="/termeni" className="hover:text-foreground">
               Termeni și condiții
             </Link>
-            {SAL.show && SAL.url && (
-              <a
-                href={SAL.url}
-                target="_blank"
-                rel="noreferrer"
-                title={SAL.label}
-                aria-label={SAL.label}
-                className="hover:text-foreground"
-              >
-                SAL
-              </a>
-            )}
           </nav>
+          {SAL.show && (
+            <a href={SAL.url} target="_blank" rel="noreferrer" aria-label={SAL.label}>
+              {SAL.image ? (
+                <img
+                  src={SAL.image}
+                  alt={SAL.label}
+                  width={250}
+                  height={62}
+                  loading="lazy"
+                  className="h-auto w-[250px] max-w-full"
+                />
+              ) : (
+                <span className="underline hover:text-foreground">SAL</span>
+              )}
+            </a>
+          )}
           {hasLegal && (
             <div className="space-y-0.5">
               {company?.legal_name && (
