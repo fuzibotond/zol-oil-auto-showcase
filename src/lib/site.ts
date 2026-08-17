@@ -23,6 +23,20 @@ export const SITE = {
   waze: "https://waze.com/ul?q=Cernat%20Covasna",
 };
 
+// ANPC SAL (alternative consumer dispute resolution). Simple enable/disable flag.
+// Set `show: false` to hide the footer element; update `url` if ANPC changes it.
+// NOTE: do NOT add the SOL/ODR platform — it was discontinued and must not appear.
+export const SAL = {
+  show: true,
+  url: "https://anpc.ro/ce-este-sal/",
+  label: "Soluționarea alternativă a litigiilor (SAL)",
+} as const;
+
+// Single source of truth for which contact-form fields are mandatory. Shared by
+// LeadForm (which marks these `required`) and the Privacy Policy's "required data"
+// note, so the documentation can never contradict the actual form.
+export const CONTACT_REQUIRED_LABELS = ["Nume", "Telefon"] as const;
+
 export type SocialPlatform =
   | "facebook"
   | "messenger"

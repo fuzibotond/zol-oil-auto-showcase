@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Facebook, MapPin, Phone, Mail } from "lucide-react";
-import { SITE } from "@/lib/site";
+import { SITE, SAL } from "@/lib/site";
 import { useSiteSettings } from "@/hooks/use-site-settings";
 import { useCompanyInfo } from "@/hooks/use-company-info";
 
@@ -9,17 +9,19 @@ export function Footer() {
   const { company } = useCompanyInfo();
   const facebook = settings.social_links.find((x) => x.key === "facebook");
 
-  // Legal identification line — rendered only from real, filled-in data.
-  const legalLine = company
-    ? [
-        company.legal_name,
-        company.cui && `CUI ${company.cui}`,
-        company.reg_com && `Reg. Com. ${company.reg_com}`,
-        company.registered_address && `Sediu: ${company.registered_address}`,
-      ]
-        .filter(Boolean)
-        .join(" · ")
-    : "";
+  // Legal identification — rendered only from admin-configured data; each line is
+  // hidden when its value is not set (no placeholders). Phone/email are already in
+  // the Contact column above, so they are not repeated here.
+  const cuiRegcom = [
+    company?.cui && `CUI: ${company.cui}`,
+    company?.reg_com && `Reg. Com.: ${company.reg_com}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const hasLegal = Boolean(
+    company &&
+    (company.legal_name || cuiRegcom || company.registered_address || company.workpoint_address),
+  );
 
   return (
     <footer className="mt-20 border-t border-border bg-surface">
@@ -92,23 +94,31 @@ export function Footer() {
             <Link to="/termeni" className="hover:text-foreground">
               Termeni și condiții
             </Link>
-            <a
-              href="https://anpc.ro"
-              target="_blank"
-              rel="noreferrer"
-              className="hover:text-foreground"
-            >
-              ANPC
-            </a>
+            {SAL.show && SAL.url && (
+              <a
+                href={SAL.url}
+                target="_blank"
+                rel="noreferrer"
+                title={SAL.label}
+                aria-label={SAL.label}
+                className="hover:text-foreground"
+              >
+                SAL
+              </a>
+            )}
           </nav>
-          {legalLine && <div>{legalLine}</div>}
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              © {new Date().getFullYear()} {SITE.name}. Toate drepturile rezervate.
+          {hasLegal && (
+            <div className="space-y-0.5">
+              {company?.legal_name && (
+                <div className="font-medium text-foreground/80">{company.legal_name}</div>
+              )}
+              {cuiRegcom && <div>{cuiRegcom}</div>}
+              {company?.registered_address && <div>Sediu social: {company.registered_address}</div>}
+              {company?.workpoint_address && <div>Punct de lucru: {company.workpoint_address}</div>}
             </div>
-            <Link to="/admin" className="hover:text-foreground">
-              Admin
-            </Link>
+          )}
+          <div>
+            © {new Date().getFullYear()} {SITE.name}. Toate drepturile rezervate.
           </div>
         </div>
       </div>

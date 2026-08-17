@@ -40,9 +40,11 @@ function renderBlocks(body: string): ReactNode[] {
 export function LegalArticle({
   page,
   fallbackTitle,
+  extra,
 }: {
   page: LegalPageDoc | null;
   fallbackTitle: string;
+  extra?: ReactNode;
 }) {
   const title = page?.title || fallbackTitle;
   const body = page?.body || "Conținutul acestei pagini va fi disponibil în curând.";
@@ -51,6 +53,7 @@ export function LegalArticle({
       <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">{title}</h1>
       <article className="mt-6 space-y-4 text-sm leading-relaxed text-foreground/90">
         {renderBlocks(body)}
+        {extra}
       </article>
     </div>
   );

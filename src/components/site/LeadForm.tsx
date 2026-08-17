@@ -94,8 +94,8 @@ export function LeadForm({
         {loading ? "Se trimite..." : "Trimite mesajul"}
       </button>
       <p className="text-[11px] text-muted-foreground text-center">
-        Apăsând „Trimite mesajul" ești de acord să te contactăm referitor la mașina solicitată.
-        Prelucrăm datele conform{" "}
+        Prin trimiterea formularului, datele furnizate vor fi utilizate pentru a răspunde
+        solicitării dumneavoastră, conform{" "}
         <Link to="/confidentialitate" className="underline hover:text-foreground">
           Politicii de confidențialitate
         </Link>
