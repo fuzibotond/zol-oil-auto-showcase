@@ -104,7 +104,7 @@ export function Footer() {
                   width={250}
                   height={62}
                   loading="lazy"
-                  className="h-auto w-[250px] max-w-full"
+                  className="h-auto w-[230px] max-w-full rounded-lg bg-white p-1.5 shadow-sm ring-1 ring-black/5 transition hover:shadow"
                 />
               ) : (
                 <span className="underline hover:text-foreground">SAL</span>
