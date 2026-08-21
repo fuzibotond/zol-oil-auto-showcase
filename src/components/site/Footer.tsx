@@ -83,46 +83,59 @@ export function Footer() {
         </div>
       </div>
       <div className="border-t border-border">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-4 text-xs text-muted-foreground space-y-2">
-          <nav className="flex flex-wrap gap-x-4 gap-y-1">
-            <Link to="/confidentialitate" className="hover:text-foreground">
-              Confidențialitate
-            </Link>
-            <Link to="/politica-cookie" className="hover:text-foreground">
-              Cookie-uri
-            </Link>
-            <Link to="/termeni" className="hover:text-foreground">
-              Termeni și condiții
-            </Link>
-          </nav>
-          {SAL.show && (
-            <a href={SAL.url} target="_blank" rel="noreferrer" aria-label={SAL.label}>
-              {SAL.image ? (
-                <img
-                  src={SAL.image}
-                  alt={SAL.label}
-                  width={240}
-                  height={60}
-                  loading="lazy"
-                  className="mt-1 block h-auto w-[240px] max-w-full"
-                />
-              ) : (
-                <span className="underline hover:text-foreground">SAL</span>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 text-xs text-muted-foreground">
+          <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+            {/* Left — legal links, company identification, copyright */}
+            <div className="space-y-2">
+              <nav className="flex flex-wrap gap-x-4 gap-y-1">
+                <Link to="/confidentialitate" className="hover:text-foreground">
+                  Confidențialitate
+                </Link>
+                <Link to="/politica-cookie" className="hover:text-foreground">
+                  Cookie-uri
+                </Link>
+                <Link to="/termeni" className="hover:text-foreground">
+                  Termeni și condiții
+                </Link>
+              </nav>
+              {hasLegal && (
+                <div className="space-y-0.5">
+                  {company?.legal_name && (
+                    <div className="font-medium text-foreground/80">{company.legal_name}</div>
+                  )}
+                  {cuiRegcom && <div>{cuiRegcom}</div>}
+                  {company?.registered_address && (
+                    <div>Sediu social: {company.registered_address}</div>
+                  )}
+                  {company?.workpoint_address && (
+                    <div>Punct de lucru: {company.workpoint_address}</div>
+                  )}
+                </div>
               )}
-            </a>
-          )}
-          {hasLegal && (
-            <div className="space-y-0.5">
-              {company?.legal_name && (
-                <div className="font-medium text-foreground/80">{company.legal_name}</div>
-              )}
-              {cuiRegcom && <div>{cuiRegcom}</div>}
-              {company?.registered_address && <div>Sediu social: {company.registered_address}</div>}
-              {company?.workpoint_address && <div>Punct de lucru: {company.workpoint_address}</div>}
+              <div>
+                © {new Date().getFullYear()} {SITE.name}. Toate drepturile rezervate.
+              </div>
             </div>
-          )}
-          <div>
-            © {new Date().getFullYear()} {SITE.name}. Toate drepturile rezervate.
+
+            {/* Right — ANPC SAL badge */}
+            {SAL.show && (
+              <div className="shrink-0 md:text-right">
+                <a href={SAL.url} target="_blank" rel="noreferrer" aria-label={SAL.label}>
+                  {SAL.image ? (
+                    <img
+                      src={SAL.image}
+                      alt={SAL.label}
+                      width={240}
+                      height={60}
+                      loading="lazy"
+                      className="block h-auto w-[240px] max-w-full"
+                    />
+                  ) : (
+                    <span className="underline hover:text-foreground">SAL</span>
+                  )}
+                </a>
+              </div>
+            )}
           </div>
         </div>
       </div>
