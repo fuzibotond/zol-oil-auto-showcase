@@ -39,6 +39,16 @@ export function Footer() {
               <Facebook className="h-4 w-4" /> Urmărește-ne pe Facebook
             </a>
           )}
+          {hasLegal && (
+            <div className="mt-5 space-y-0.5 text-xs text-muted-foreground">
+              {company?.legal_name && (
+                <div className="font-medium text-foreground/80">{company.legal_name}</div>
+              )}
+              {cuiRegcom && <div>{cuiRegcom}</div>}
+              {company?.registered_address && <div>Sediu social: {company.registered_address}</div>}
+              {company?.workpoint_address && <div>Punct de lucru: {company.workpoint_address}</div>}
+            </div>
+          )}
         </div>
         <div>
           <div className="text-sm font-semibold mb-3">Navigație</div>
@@ -84,42 +94,28 @@ export function Footer() {
       </div>
       <div className="border-t border-border">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 text-xs text-muted-foreground">
-          <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-            {/* Left — legal links, company identification, copyright */}
-            <div className="space-y-2">
-              <nav className="flex flex-wrap gap-x-4 gap-y-1">
-                <Link to="/confidentialitate" className="hover:text-foreground">
-                  Confidențialitate
-                </Link>
-                <Link to="/politica-cookie" className="hover:text-foreground">
-                  Cookie-uri
-                </Link>
-                <Link to="/termeni" className="hover:text-foreground">
-                  Termeni și condiții
-                </Link>
-              </nav>
-              {hasLegal && (
-                <div className="space-y-0.5">
-                  {company?.legal_name && (
-                    <div className="font-medium text-foreground/80">{company.legal_name}</div>
-                  )}
-                  {cuiRegcom && <div>{cuiRegcom}</div>}
-                  {company?.registered_address && (
-                    <div>Sediu social: {company.registered_address}</div>
-                  )}
-                  {company?.workpoint_address && (
-                    <div>Punct de lucru: {company.workpoint_address}</div>
-                  )}
-                </div>
-              )}
-              <div>
-                © {new Date().getFullYear()} {SITE.name}. Toate drepturile rezervate.
-              </div>
+          <div className="flex flex-col items-center gap-4 text-center md:grid md:grid-cols-3 md:items-center md:text-left">
+            {/* Left — legal links */}
+            <nav className="flex flex-wrap justify-center gap-x-4 gap-y-1 md:justify-start">
+              <Link to="/confidentialitate" className="hover:text-foreground">
+                Confidențialitate
+              </Link>
+              <Link to="/politica-cookie" className="hover:text-foreground">
+                Cookie-uri
+              </Link>
+              <Link to="/termeni" className="hover:text-foreground">
+                Termeni și condiții
+              </Link>
+            </nav>
+
+            {/* Center — copyright */}
+            <div className="md:text-center">
+              © {new Date().getFullYear()} {SITE.name}. Toate drepturile rezervate.
             </div>
 
             {/* Right — ANPC SAL badge */}
-            {SAL.show && (
-              <div className="shrink-0 md:text-right">
+            <div className="md:justify-self-end">
+              {SAL.show && (
                 <a href={SAL.url} target="_blank" rel="noreferrer" aria-label={SAL.label}>
                   {SAL.image ? (
                     <img
@@ -134,8 +130,8 @@ export function Footer() {
                     <span className="underline hover:text-foreground">SAL</span>
                   )}
                 </a>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>
