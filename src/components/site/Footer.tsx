@@ -101,10 +101,10 @@ export function Footer() {
                 <img
                   src={SAL.image}
                   alt={SAL.label}
-                  width={250}
-                  height={62}
+                  width={240}
+                  height={60}
                   loading="lazy"
-                  className="h-auto w-[230px] max-w-full rounded-lg bg-white p-1.5 shadow-sm ring-1 ring-black/5 transition hover:shadow"
+                  className="mt-1 block h-auto w-[240px] max-w-full"
                 />
               ) : (
                 <span className="underline hover:text-foreground">SAL</span>
