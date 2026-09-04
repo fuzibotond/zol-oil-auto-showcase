@@ -46,6 +46,7 @@ interface CarRow {
   equipment: string; // JSON array
   status: string;
   is_featured: number; // 0/1
+  is_hidden: number; // 0/1
   created_at: string;
   updated_at: string;
 }
@@ -132,6 +133,7 @@ function mapCar(r: CarRow, images: CarImage[] = []): Car {
     equipment: safeJsonArray<string>(r.equipment),
     status: r.status as CarStatus,
     is_featured: r.is_featured === 1,
+    is_hidden: r.is_hidden === 1,
     created_at: r.created_at,
     updated_at: r.updated_at,
     images,
@@ -162,11 +164,15 @@ async function imagesForCarIds(carIds: string[]): Promise<Map<string, CarImage[]
 // ---------------------------------------------------------------------------
 // Public reads
 // ---------------------------------------------------------------------------
-export async function listCars(opts: { featured?: boolean; limit?: number } = {}): Promise<Car[]> {
+export async function listCars(
+  opts: { featured?: boolean; limit?: number; includeHidden?: boolean } = {},
+): Promise<Car[]> {
   const db = getDB();
   const clauses: string[] = [];
   const binds: unknown[] = [];
   if (opts.featured) clauses.push("is_featured = 1");
+  // Public callers omit `includeHidden`; the admin passes it to see hidden cars.
+  if (!opts.includeHidden) clauses.push("is_hidden = 0");
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
   const limit = opts.limit ? `LIMIT ${Math.max(1, Math.min(200, Math.floor(opts.limit)))}` : "";
   const { results } = await db
@@ -182,7 +188,11 @@ export async function listCars(opts: { featured?: boolean; limit?: number } = {}
 
 export async function getCarBySlug(slug: string): Promise<Car | null> {
   const db = getDB();
-  const row = await db.prepare(`SELECT * FROM cars WHERE slug = ?`).bind(slug).first<CarRow>();
+  // Public detail page: a hidden car must not be reachable, even by direct URL.
+  const row = await db
+    .prepare(`SELECT * FROM cars WHERE slug = ? AND is_hidden = 0`)
+    .bind(slug)
+    .first<CarRow>();
   if (!row) return null;
   const imgMap = await imagesForCarIds([row.id]);
   return mapCar(row, imgMap.get(row.id) ?? []);
@@ -198,8 +208,10 @@ export async function getCarById(id: string): Promise<Car | null> {
 
 export async function countCars(opts: { inStockOnly?: boolean } = {}): Promise<number> {
   const db = getDB();
-  // "In stock" = every car still on the lot, i.e. anything not marked as sold.
-  const where = opts.inStockOnly ? `WHERE status <> 'vandut'` : "";
+  // Public counter: never count hidden cars. "In stock" = anything not sold.
+  const clauses = ["is_hidden = 0"];
+  if (opts.inStockOnly) clauses.push("status <> 'vandut'");
+  const where = `WHERE ${clauses.join(" AND ")}`;
   const row = await db.prepare(`SELECT COUNT(*) AS n FROM cars ${where}`).first<{ n: number }>();
   return row?.n ?? 0;
 }
@@ -207,7 +219,7 @@ export async function countCars(opts: { inStockOnly?: boolean } = {}): Promise<n
 export async function listCarSlugs(): Promise<{ slug: string; updated_at: string }[]> {
   const db = getDB();
   const { results } = await db
-    .prepare(`SELECT slug, updated_at FROM cars ORDER BY updated_at DESC`)
+    .prepare(`SELECT slug, updated_at FROM cars WHERE is_hidden = 0 ORDER BY updated_at DESC`)
     .all<{ slug: string; updated_at: string }>();
   return results;
 }
@@ -215,7 +227,9 @@ export async function listCarSlugs(): Promise<{ slug: string; updated_at: string
 export async function similarCars(excludeId: string, brand: string, limit = 3): Promise<Car[]> {
   const db = getDB();
   const { results } = await db
-    .prepare(`SELECT * FROM cars WHERE id != ? AND brand = ? ORDER BY created_at DESC LIMIT ?`)
+    .prepare(
+      `SELECT * FROM cars WHERE id != ? AND brand = ? AND is_hidden = 0 ORDER BY created_at DESC LIMIT ?`,
+    )
     .bind(excludeId, brand, Math.max(1, Math.min(12, limit)))
     .all<CarRow>();
   const imgMap = await imagesForCarIds(results.map((r) => r.id));
@@ -262,6 +276,7 @@ export interface CarWriteInput {
   equipment: string[];
   status: string;
   is_featured: boolean;
+  is_hidden?: boolean;
 }
 
 export interface ImageWriteInput {
@@ -286,7 +301,7 @@ export async function upsertCar(
         `UPDATE cars SET slug=?, brand=?, model=?, version=?, autovit_url=?, year=?, price=?,
            original_price=?, currency=?, mileage=?, fuel_type=?, transmission=?, engine_size=?,
            power=?, emission_norm=?, body_type=?, color=?, description=?, equipment=?, status=?,
-           is_featured=?, updated_at=?
+           is_featured=?, is_hidden=?, updated_at=?
          WHERE id=?`,
       )
       .bind(
@@ -311,6 +326,7 @@ export async function upsertCar(
         JSON.stringify(input.equipment ?? []),
         input.status,
         input.is_featured ? 1 : 0,
+        input.is_hidden ? 1 : 0,
         now,
         id,
       )
@@ -320,8 +336,8 @@ export async function upsertCar(
       .prepare(
         `INSERT INTO cars (id, slug, brand, model, version, autovit_url, year, price, original_price,
            currency, mileage, fuel_type, transmission, engine_size, power, emission_norm, body_type,
-           color, description, equipment, status, is_featured, created_at, updated_at)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+           color, description, equipment, status, is_featured, is_hidden, created_at, updated_at)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       )
       .bind(
         carId,
@@ -346,6 +362,7 @@ export async function upsertCar(
         JSON.stringify(input.equipment ?? []),
         input.status,
         input.is_featured ? 1 : 0,
+        input.is_hidden ? 1 : 0,
         now,
         now,
       )
@@ -368,6 +385,15 @@ export async function upsertCar(
   }
 
   return { id: carId };
+}
+
+/** Toggle a car's public visibility without touching any other field. */
+export async function setCarHidden(id: string, hidden: boolean): Promise<void> {
+  const db = getDB();
+  await db
+    .prepare(`UPDATE cars SET is_hidden = ?, updated_at = ? WHERE id = ?`)
+    .bind(hidden ? 1 : 0, nowIso(), id)
+    .run();
 }
 
 /** Returns the R2 keys that were attached to a car, so the caller can clean R2 up. */

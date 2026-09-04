@@ -34,6 +34,8 @@ export interface Car {
   equipment: string[];
   status: CarStatus;
   is_featured: boolean;
+  /** When true, the car is hidden from the public site (still shown in admin). */
+  is_hidden: boolean;
   created_at: string;
   updated_at: string;
   images?: CarImage[];

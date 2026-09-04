@@ -126,6 +126,7 @@ const CarInput = z.object({
   equipment: z.array(z.string().max(120)).default([]),
   status: z.string().min(1).max(20),
   is_featured: z.boolean().default(false),
+  is_hidden: z.boolean().default(false),
   images: z.array(ImageInput).default([]),
 });
 
@@ -133,7 +134,8 @@ export const adminListCars = createServerFn({ method: "GET" })
   .middleware([requireAdmin])
   .handler(async () => {
     const repo = await import("@/lib/db/repository");
-    return repo.listCars({});
+    // Admin sees every car, including those hidden from the public site.
+    return repo.listCars({ includeHidden: true });
   });
 
 export const adminGetCar = createServerFn({ method: "GET" })
@@ -159,6 +161,15 @@ export const adminUpsertCar = createServerFn({ method: "POST" })
       })),
       data.id,
     );
+  });
+
+export const adminSetCarHidden = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .validator(z.object({ id: z.string().uuid(), hidden: z.boolean() }))
+  .handler(async ({ data }) => {
+    const repo = await import("@/lib/db/repository");
+    await repo.setCarHidden(data.id, data.hidden);
+    return { ok: true };
   });
 
 export const adminDeleteCar = createServerFn({ method: "POST" })

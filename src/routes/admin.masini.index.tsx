@@ -8,13 +8,15 @@ import {
   Trash2,
   Search,
   X,
+  Eye,
+  EyeOff,
   ChevronUp,
   ChevronDown,
   ChevronsUpDown,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { adminListCars, adminDeleteCar } from "@/lib/api/cars.functions";
+import { adminListCars, adminDeleteCar, adminSetCarHidden } from "@/lib/api/cars.functions";
 import { fmtPrice, fmtKm, fmtDate, isRecent } from "@/lib/format";
 import { StatusBadge } from "@/components/site/StatusBadge";
 import { STATUS_LABEL } from "@/lib/site";
@@ -53,6 +55,7 @@ function compare(a: Car, b: Car, key: SortKey): number {
 function AdminCarsPage() {
   const listCars = useServerFn(adminListCars);
   const del = useServerFn(adminDeleteCar);
+  const setHidden = useServerFn(adminSetCarHidden);
   const qc = useQueryClient();
   const { data: cars = [], isLoading } = useQuery({
     queryKey: ["admin", "cars"],
@@ -99,6 +102,17 @@ function AdminCarsPage() {
       qc.invalidateQueries({ queryKey: ["admin", "cars"] });
     } catch (e: any) {
       toast.error(e?.message ?? "Eroare la ștergere");
+    }
+  }
+
+  async function onToggleHidden(id: string, hidden: boolean) {
+    try {
+      await setHidden({ data: { id, hidden } });
+      toast.success(hidden ? "Mașină ascunsă de pe site" : "Mașină vizibilă pe site");
+      qc.invalidateQueries({ queryKey: ["admin", "cars"] });
+      qc.invalidateQueries({ queryKey: ["cars"] });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Eroare la actualizare");
     }
   }
 
@@ -223,10 +237,14 @@ function AdminCarsPage() {
                 </tr>
               ) : (
                 pageRows.map((c) => (
-                  <tr key={c.id}>
+                  <tr key={c.id} className={c.is_hidden ? "bg-muted/30" : undefined}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-14 overflow-hidden rounded-md bg-muted">
+                        <div
+                          className={`h-10 w-14 overflow-hidden rounded-md bg-muted ${
+                            c.is_hidden ? "opacity-50" : ""
+                          }`}
+                        >
                           {c.images?.[0]?.url && (
                             <img
                               src={c.images[0].url}
@@ -243,6 +261,11 @@ function AdminCarsPage() {
                             {isRecent(c.created_at) && (
                               <span className="inline-flex items-center rounded-full border border-accent/30 bg-accent/15 px-2 py-0.5 text-[11px] font-medium text-accent">
                                 Nou
+                              </span>
+                            )}
+                            {c.is_hidden && (
+                              <span className="inline-flex items-center gap-1 rounded-full border border-border bg-secondary px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                                <EyeOff className="h-3 w-3" /> Ascunsă
                               </span>
                             )}
                           </div>
@@ -264,6 +287,21 @@ function AdminCarsPage() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="inline-flex gap-2">
+                        <button
+                          onClick={() => onToggleHidden(c.id, !c.is_hidden)}
+                          title={c.is_hidden ? "Afișează pe site" : "Ascunde de pe site"}
+                          className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs hover:bg-secondary"
+                        >
+                          {c.is_hidden ? (
+                            <>
+                              <Eye className="h-3.5 w-3.5" /> Afișează
+                            </>
+                          ) : (
+                            <>
+                              <EyeOff className="h-3.5 w-3.5" /> Ascunde
+                            </>
+                          )}
+                        </button>
                         <Link
                           to="/admin/masini/$id/edit"
                           params={{ id: c.id }}

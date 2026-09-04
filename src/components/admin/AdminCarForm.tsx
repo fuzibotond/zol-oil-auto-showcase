@@ -42,6 +42,7 @@ export function AdminCarForm({ initial }: Props) {
     equipment: (initial?.equipment ?? []).join("\n"),
     status: (initial?.status ?? "disponibil") as string,
     is_featured: initial?.is_featured ?? false,
+    is_hidden: initial?.is_hidden ?? false,
   });
   const [images, setImages] = useState<ImageRow[]>(
     (initial?.images ?? []).map((i) => ({
@@ -342,6 +343,21 @@ export function AdminCarForm({ initial }: Props) {
               className="h-4 w-4"
             />
             <span className="text-sm">Mașină recomandată</span>
+          </label>
+          <label className="flex items-start gap-2 sm:col-span-2">
+            <input
+              type="checkbox"
+              checked={form.is_hidden}
+              onChange={(e) => setForm({ ...form, is_hidden: e.target.checked })}
+              className="mt-0.5 h-4 w-4"
+            />
+            <span className="text-sm">
+              Ascunde de pe site
+              <span className="block text-xs text-muted-foreground">
+                Mașina nu apare în lista publică, în căutări sau pe pagina proprie, dar rămâne
+                vizibilă aici în administrare.
+              </span>
+            </span>
           </label>
         </div>
       </section>
