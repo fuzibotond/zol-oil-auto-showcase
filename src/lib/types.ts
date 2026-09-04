@@ -18,12 +18,16 @@ export interface Car {
   version: string | null;
   year: number;
   price: number;
+  /** Previous, higher price. When set and > price, the UI shows a price drop. */
+  original_price: number | null;
   currency: string;
   mileage: number;
   fuel_type: string;
   transmission: string;
   engine_size: number | null;
   power: number | null;
+  /** Pollution/emission norm, e.g. "Euro 6" (Norma de poluare). */
+  emission_norm: string | null;
   body_type: string | null;
   color: string | null;
   description: string | null;

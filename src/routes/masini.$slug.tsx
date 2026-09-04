@@ -10,6 +10,7 @@ import {
   Gauge,
   Palette,
   Zap,
+  Leaf,
   Car as CarIcon,
   Share2,
   ChevronLeft,
@@ -21,7 +22,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { getCarBySlug, similarCars } from "@/lib/api/cars.functions";
-import { fmtKm, fmtPrice, fmtNumber, isRecent } from "@/lib/format";
+import { fmtKm, fmtPrice, fmtNumber, isRecent, priceDrop } from "@/lib/format";
 import { SITE } from "@/lib/site";
 import { StatusBadge } from "@/components/site/StatusBadge";
 import { LeadForm } from "@/components/site/LeadForm";
@@ -84,6 +85,7 @@ function CarDetail() {
   const [idx, setIdx] = useState(0);
   const [tab, setTab] = useState<Tab>("specs");
   const title = `${car.brand} ${car.model}`;
+  const drop = priceDrop(car.price, car.original_price);
   // Pre-fill WhatsApp with the car's details so the customer only has to extend it.
   const carBase = (import.meta.env.VITE_SITE_URL ?? "").replace(/\/$/, "");
   const carUrl = carBase ? `${carBase}/masini/${car.slug}` : "";
@@ -302,6 +304,13 @@ function CarDetail() {
                       value={car.color}
                     />
                   ) : null}
+                  {car.emission_norm ? (
+                    <SpecBlock
+                      icon={<Leaf className="h-4 w-4" />}
+                      label="Norma de poluare"
+                      value={car.emission_norm}
+                    />
+                  ) : null}
                 </div>
               </div>
             )}
@@ -335,10 +344,26 @@ function CarDetail() {
             {/* Price card */}
             <div className="surface-card overflow-hidden">
               <div className="bg-secondary/50 px-6 py-4 border-b border-border">
-                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Preț de vânzare
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Preț de vânzare
+                  </div>
+                  {drop && (
+                    <span className="inline-flex items-center rounded-full bg-destructive px-2.5 py-1 text-xs font-semibold text-destructive-foreground">
+                      Reducere −{drop.percent}%
+                    </span>
+                  )}
                 </div>
-                <div className="mt-1 font-display text-4xl font-bold tracking-tight">
+                {drop && (
+                  <div className="mt-1 text-base font-medium text-muted-foreground line-through">
+                    {fmtPrice(drop.original, car.currency)}
+                  </div>
+                )}
+                <div
+                  className={`mt-0.5 font-display text-4xl font-bold tracking-tight ${
+                    drop ? "text-destructive" : ""
+                  }`}
+                >
                   {fmtPrice(car.price, car.currency)}
                 </div>
               </div>
@@ -458,8 +483,19 @@ function CarDetail() {
             <div className="text-[11px] text-muted-foreground truncate">
               {title} · {car.year}
             </div>
-            <div className="font-display text-lg font-bold leading-tight">
-              {fmtPrice(car.price, car.currency)}
+            <div className="flex items-baseline gap-2">
+              <div
+                className={`font-display text-lg font-bold leading-tight ${
+                  drop ? "text-destructive" : ""
+                }`}
+              >
+                {fmtPrice(car.price, car.currency)}
+              </div>
+              {drop && (
+                <div className="text-xs font-medium text-muted-foreground line-through">
+                  {fmtPrice(drop.original, car.currency)}
+                </div>
+              )}
             </div>
           </div>
           <a

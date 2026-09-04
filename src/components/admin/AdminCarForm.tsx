@@ -28,12 +28,14 @@ export function AdminCarForm({ initial }: Props) {
     version: initial?.version ?? "",
     year: initial?.year ?? new Date().getFullYear() - 5,
     price: initial?.price ?? 0,
+    original_price: initial?.original_price ?? 0,
     currency: initial?.currency ?? "EUR",
     mileage: initial?.mileage ?? 0,
     fuel_type: initial?.fuel_type ?? FUEL_TYPES[1],
     transmission: initial?.transmission ?? TRANSMISSIONS[0],
     engine_size: initial?.engine_size ?? 0,
     power: initial?.power ?? 0,
+    emission_norm: initial?.emission_norm ?? "",
     body_type: initial?.body_type ?? BODY_TYPES[0],
     color: initial?.color ?? "",
     description: initial?.description ?? "",
@@ -115,9 +117,11 @@ export function AdminCarForm({ initial }: Props) {
         slug: form.slug || slugify(`${form.brand}-${form.model}-${form.year}`),
         year: Number(form.year),
         price: Number(form.price),
+        original_price: form.original_price ? Number(form.original_price) : null,
         mileage: Number(form.mileage),
         engine_size: form.engine_size ? Number(form.engine_size) : null,
         power: form.power ? Number(form.power) : null,
+        emission_norm: form.emission_norm?.trim() || null,
         equipment: form.equipment
           .split(/\r?\n/)
           .map((s) => s.trim())
@@ -201,6 +205,19 @@ export function AdminCarForm({ initial }: Props) {
               className={inputCls}
             />
           </F>
+          <F label="Preț vechi (pentru reducere)">
+            <input
+              type="number"
+              value={form.original_price}
+              onChange={(e) => setForm({ ...form, original_price: Number(e.target.value) })}
+              placeholder="0 = fără reducere"
+              className={inputCls}
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Completează doar dacă prețul a scăzut. Trebuie să fie mai mare decât prețul curent
+              pentru a afișa eticheta „Reducere".
+            </p>
+          </F>
           <F label="Monedă">
             <select
               value={form.currency}
@@ -269,6 +286,14 @@ export function AdminCarForm({ initial }: Props) {
               type="number"
               value={form.power}
               onChange={(e) => setForm({ ...form, power: Number(e.target.value) })}
+              className={inputCls}
+            />
+          </F>
+          <F label="Norma de poluare">
+            <input
+              value={form.emission_norm ?? ""}
+              onChange={(e) => setForm({ ...form, emission_norm: e.target.value })}
+              placeholder="Euro 6"
               className={inputCls}
             />
           </F>

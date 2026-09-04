@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Gauge, Fuel, Cog, Calendar } from "lucide-react";
 import type { Car } from "@/lib/types";
-import { fmtKm, fmtPrice, isRecent } from "@/lib/format";
+import { fmtKm, fmtPrice, isRecent, priceDrop } from "@/lib/format";
 import { StatusBadge } from "./StatusBadge";
 
 const PLACEHOLDER =
@@ -9,6 +9,7 @@ const PLACEHOLDER =
 
 export function CarCard({ car }: { car: Car }) {
   const img = car.images?.[0]?.url ?? PLACEHOLDER;
+  const drop = priceDrop(car.price, car.original_price);
   return (
     <Link
       to="/masini/$slug"
@@ -35,6 +36,11 @@ export function CarCard({ car }: { car: Car }) {
             </span>
           )}
         </div>
+        {drop && (
+          <span className="absolute right-3 top-3 rounded-full bg-destructive px-2.5 py-1 text-xs font-semibold text-destructive-foreground backdrop-blur">
+            Reducere −{drop.percent}%
+          </span>
+        )}
       </div>
       <div className="flex flex-1 flex-col p-5">
         <div className="flex items-start justify-between gap-3">
@@ -45,7 +51,12 @@ export function CarCard({ car }: { car: Car }) {
             {car.version && <div className="text-sm text-muted-foreground">{car.version}</div>}
           </div>
           <div className="text-right">
-            <div className="font-display text-xl font-bold">
+            {drop && (
+              <div className="text-xs font-medium text-muted-foreground line-through">
+                {fmtPrice(drop.original, car.currency)}
+              </div>
+            )}
+            <div className={`font-display text-xl font-bold ${drop ? "text-destructive" : ""}`}>
               {fmtPrice(car.price, car.currency)}
             </div>
           </div>

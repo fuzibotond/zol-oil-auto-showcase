@@ -26,7 +26,7 @@ export const getCarBySlug = createServerFn({ method: "GET" })
 export const countAvailableCars = createServerFn({ method: "GET" }).handler(async () => {
   try {
     const repo = await import("@/lib/db/repository");
-    return await repo.countCars({ availableOnly: true });
+    return await repo.countCars({ inStockOnly: true });
   } catch {
     return 0;
   }
@@ -112,12 +112,14 @@ const CarInput = z.object({
   version: z.string().max(80).optional().nullable(),
   year: z.number().int().min(1950).max(2100),
   price: z.number().min(0).max(1_000_000),
+  original_price: z.number().min(0).max(1_000_000).optional().nullable(),
   currency: z.string().default("EUR"),
   mileage: z.number().int().min(0).max(2_000_000).default(0),
   fuel_type: z.string().min(1).max(20),
   transmission: z.string().min(1).max(20),
   engine_size: z.number().int().min(0).max(10000).optional().nullable(),
   power: z.number().int().min(0).max(2000).optional().nullable(),
+  emission_norm: z.string().max(20).optional().nullable(),
   body_type: z.string().max(30).optional().nullable(),
   color: z.string().max(40).optional().nullable(),
   description: z.string().max(5000).optional().nullable(),

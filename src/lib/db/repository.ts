@@ -32,12 +32,14 @@ interface CarRow {
   autovit_url: string | null;
   year: number;
   price: number;
+  original_price: number | null;
   currency: string;
   mileage: number;
   fuel_type: string;
   transmission: string;
   engine_size: number | null;
   power: number | null;
+  emission_norm: string | null;
   body_type: string | null;
   color: string | null;
   description: string | null;
@@ -116,12 +118,14 @@ function mapCar(r: CarRow, images: CarImage[] = []): Car {
     autovit_url: r.autovit_url,
     year: r.year,
     price: r.price,
+    original_price: r.original_price,
     currency: r.currency,
     mileage: r.mileage,
     fuel_type: r.fuel_type,
     transmission: r.transmission,
     engine_size: r.engine_size,
     power: r.power,
+    emission_norm: r.emission_norm,
     body_type: r.body_type,
     color: r.color,
     description: r.description,
@@ -192,9 +196,10 @@ export async function getCarById(id: string): Promise<Car | null> {
   return mapCar(row, imgMap.get(row.id) ?? []);
 }
 
-export async function countCars(opts: { availableOnly?: boolean } = {}): Promise<number> {
+export async function countCars(opts: { inStockOnly?: boolean } = {}): Promise<number> {
   const db = getDB();
-  const where = opts.availableOnly ? `WHERE status = 'disponibil'` : "";
+  // "In stock" = every car still on the lot, i.e. anything not marked as sold.
+  const where = opts.inStockOnly ? `WHERE status <> 'vandut'` : "";
   const row = await db.prepare(`SELECT COUNT(*) AS n FROM cars ${where}`).first<{ n: number }>();
   return row?.n ?? 0;
 }
@@ -243,12 +248,14 @@ export interface CarWriteInput {
   autovit_url?: string | null;
   year: number;
   price: number;
+  original_price?: number | null;
   currency: string;
   mileage: number;
   fuel_type: string;
   transmission: string;
   engine_size?: number | null;
   power?: number | null;
+  emission_norm?: string | null;
   body_type?: string | null;
   color?: string | null;
   description?: string | null;
@@ -277,8 +284,9 @@ export async function upsertCar(
     await db
       .prepare(
         `UPDATE cars SET slug=?, brand=?, model=?, version=?, autovit_url=?, year=?, price=?,
-           currency=?, mileage=?, fuel_type=?, transmission=?, engine_size=?, power=?, body_type=?,
-           color=?, description=?, equipment=?, status=?, is_featured=?, updated_at=?
+           original_price=?, currency=?, mileage=?, fuel_type=?, transmission=?, engine_size=?,
+           power=?, emission_norm=?, body_type=?, color=?, description=?, equipment=?, status=?,
+           is_featured=?, updated_at=?
          WHERE id=?`,
       )
       .bind(
@@ -289,12 +297,14 @@ export async function upsertCar(
         input.autovit_url ?? null,
         input.year,
         input.price,
+        input.original_price ?? null,
         input.currency,
         input.mileage,
         input.fuel_type,
         input.transmission,
         input.engine_size ?? null,
         input.power ?? null,
+        input.emission_norm ?? null,
         input.body_type ?? null,
         input.color ?? null,
         input.description ?? null,
@@ -308,10 +318,10 @@ export async function upsertCar(
   } else {
     await db
       .prepare(
-        `INSERT INTO cars (id, slug, brand, model, version, autovit_url, year, price, currency,
-           mileage, fuel_type, transmission, engine_size, power, body_type, color, description,
-           equipment, status, is_featured, created_at, updated_at)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        `INSERT INTO cars (id, slug, brand, model, version, autovit_url, year, price, original_price,
+           currency, mileage, fuel_type, transmission, engine_size, power, emission_norm, body_type,
+           color, description, equipment, status, is_featured, created_at, updated_at)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       )
       .bind(
         carId,
@@ -322,12 +332,14 @@ export async function upsertCar(
         input.autovit_url ?? null,
         input.year,
         input.price,
+        input.original_price ?? null,
         input.currency,
         input.mileage,
         input.fuel_type,
         input.transmission,
         input.engine_size ?? null,
         input.power ?? null,
+        input.emission_norm ?? null,
         input.body_type ?? null,
         input.color ?? null,
         input.description ?? null,

@@ -5,6 +5,18 @@ export const fmtPrice = (price: number, currency = "EUR") =>
 
 export const fmtKm = (km: number) => `${new Intl.NumberFormat("ro-RO").format(km)} km`;
 
+/**
+ * A genuine price drop: an original price that is set and strictly higher than
+ * the current price. Returns null otherwise (nothing to show).
+ */
+export function priceDrop(
+  price: number,
+  originalPrice: number | null | undefined,
+): { original: number; percent: number } | null {
+  if (originalPrice == null || originalPrice <= price) return null;
+  return { original: originalPrice, percent: Math.round((1 - price / originalPrice) * 100) };
+}
+
 export const fmtNumber = (n: number) => new Intl.NumberFormat("ro-RO").format(n);
 
 /** Short Romanian date, e.g. "13 aug. 2026". */
