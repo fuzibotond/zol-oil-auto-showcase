@@ -23,24 +23,26 @@ export function CarCard({ car }: { car: Car }) {
           className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
           loading="lazy"
         />
-        <div className="absolute left-3 top-3 flex flex-wrap gap-2">
-          <StatusBadge status={car.status} />
-          {isRecent(car.created_at) && (
-            <span className="rounded-full bg-accent px-2.5 py-1 text-xs font-medium text-accent-foreground backdrop-blur">
-              Nou
-            </span>
-          )}
-          {car.is_featured && (
-            <span className="rounded-full bg-foreground/90 px-2.5 py-1 text-xs font-medium text-background backdrop-blur">
-              Recomandat
+        <div className="absolute inset-x-3 top-3 flex items-start justify-between gap-2">
+          <div className="flex flex-wrap gap-2">
+            <StatusBadge status={car.status} />
+            {isRecent(car.created_at) && (
+              <span className="rounded-full bg-accent px-2.5 py-1 text-xs font-medium text-accent-foreground backdrop-blur">
+                Nou
+              </span>
+            )}
+            {car.is_featured && (
+              <span className="rounded-full bg-foreground/90 px-2.5 py-1 text-xs font-medium text-background backdrop-blur">
+                Recomandat
+              </span>
+            )}
+          </div>
+          {drop && (
+            <span className="flex-shrink-0 rounded-full bg-destructive px-2.5 py-1 text-xs font-semibold text-destructive-foreground backdrop-blur">
+              Reducere −{drop.percent}%
             </span>
           )}
         </div>
-        {drop && (
-          <span className="absolute right-3 top-3 rounded-full bg-destructive px-2.5 py-1 text-xs font-semibold text-destructive-foreground backdrop-blur">
-            Reducere −{drop.percent}%
-          </span>
-        )}
       </div>
       <div className="flex flex-1 flex-col p-5">
         <div className="flex items-start justify-between gap-3">
