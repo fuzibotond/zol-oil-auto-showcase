@@ -6,6 +6,8 @@ import {
   Plus,
   Pencil,
   Trash2,
+  Search,
+  X,
   ChevronUp,
   ChevronDown,
   ChevronsUpDown,
@@ -57,6 +59,7 @@ function AdminCarsPage() {
     queryFn: () => listCars(),
   });
 
+  const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [page, setPage] = useState(1);
@@ -72,10 +75,16 @@ function AdminCarsPage() {
     setPage(1);
   }
 
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return cars;
+    return cars.filter((c) => `${c.brand} ${c.model} ${c.version ?? ""}`.toLowerCase().includes(q));
+  }, [cars, query]);
+
   const sorted = useMemo(() => {
     const dir = sortDir === "asc" ? 1 : -1;
-    return [...cars].sort((a, b) => compare(a, b, sortKey) * dir);
-  }, [cars, sortKey, sortDir]);
+    return [...filtered].sort((a, b) => compare(a, b, sortKey) * dir);
+  }, [filtered, sortKey, sortDir]);
 
   const pageCount = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const current = Math.min(page, pageCount);
@@ -98,7 +107,11 @@ function AdminCarsPage() {
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight">Mașini</h1>
-          <p className="text-sm text-muted-foreground mt-1">{cars.length} mașini în total</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            {query.trim()
+              ? `${filtered.length} din ${cars.length} mașini`
+              : `${cars.length} mașini în total`}
+          </p>
         </div>
         <Link
           to="/admin/masini/nou"
@@ -106,6 +119,33 @@ function AdminCarsPage() {
         >
           <Plus className="h-4 w-4" /> Adaugă mașină
         </Link>
+      </div>
+
+      <div className="relative mt-5 max-w-md">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <input
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setPage(1);
+          }}
+          placeholder="Caută după marcă, model sau versiune..."
+          aria-label="Caută mașini"
+          className="w-full rounded-xl border border-input bg-background pl-9 pr-9 py-2.5 text-sm"
+        />
+        {query && (
+          <button
+            type="button"
+            onClick={() => {
+              setQuery("");
+              setPage(1);
+            }}
+            aria-label="Șterge căutarea"
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
       <div className="mt-6 surface-card overflow-hidden">
@@ -173,6 +213,12 @@ function AdminCarsPage() {
                       Adaugă prima
                     </Link>
                     .
+                  </td>
+                </tr>
+              ) : sorted.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                    Nicio mașină nu corespunde căutării „{query.trim()}".
                   </td>
                 </tr>
               ) : (
