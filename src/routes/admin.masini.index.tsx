@@ -1,15 +1,52 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  ChevronUp,
+  ChevronDown,
+  ChevronsUpDown,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { adminListCars, adminDeleteCar } from "@/lib/api/cars.functions";
 import { fmtPrice, fmtKm, fmtDate, isRecent } from "@/lib/format";
 import { StatusBadge } from "@/components/site/StatusBadge";
+import { STATUS_LABEL } from "@/lib/site";
+import type { Car } from "@/lib/types";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/masini/")({
   component: AdminCarsPage,
 });
+
+type SortKey = "car" | "year" | "mileage" | "price" | "created_at" | "status";
+type SortDir = "asc" | "desc";
+
+const PAGE_SIZE = 15;
+
+function compare(a: Car, b: Car, key: SortKey): number {
+  switch (key) {
+    case "car":
+      return `${a.brand} ${a.model}`.localeCompare(`${b.brand} ${b.model}`, "ro");
+    case "year":
+      return a.year - b.year;
+    case "mileage":
+      return a.mileage - b.mileage;
+    case "price":
+      return a.price - b.price;
+    case "created_at":
+      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    case "status":
+      return (STATUS_LABEL[a.status] ?? a.status).localeCompare(
+        STATUS_LABEL[b.status] ?? b.status,
+        "ro",
+      );
+  }
+}
 
 function AdminCarsPage() {
   const listCars = useServerFn(adminListCars);
@@ -19,6 +56,31 @@ function AdminCarsPage() {
     queryKey: ["admin", "cars"],
     queryFn: () => listCars(),
   });
+
+  const [sortKey, setSortKey] = useState<SortKey>("created_at");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [page, setPage] = useState(1);
+
+  function toggleSort(key: SortKey) {
+    if (key === sortKey) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      // Text columns read best ascending; numeric/date default to descending.
+      setSortDir(key === "car" || key === "status" ? "asc" : "desc");
+    }
+    setPage(1);
+  }
+
+  const sorted = useMemo(() => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    return [...cars].sort((a, b) => compare(a, b, sortKey) * dir);
+  }, [cars, sortKey, sortDir]);
+
+  const pageCount = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const current = Math.min(page, pageCount);
+  const start = (current - 1) * PAGE_SIZE;
+  const pageRows = sorted.slice(start, start + PAGE_SIZE);
 
   async function onDelete(id: string, name: string) {
     if (!confirm(`Ștergi ${name}? Acțiunea este definitivă.`)) return;
@@ -51,12 +113,48 @@ function AdminCarsPage() {
           <table className="w-full text-sm">
             <thead className="bg-secondary/60">
               <tr className="text-left text-xs uppercase text-muted-foreground">
-                <th className="px-4 py-3">Mașină</th>
-                <th className="px-4 py-3">An</th>
-                <th className="px-4 py-3">KM</th>
-                <th className="px-4 py-3">Preț</th>
-                <th className="px-4 py-3">Adăugat</th>
-                <th className="px-4 py-3">Status</th>
+                <SortTh
+                  label="Mașină"
+                  col="car"
+                  sortKey={sortKey}
+                  sortDir={sortDir}
+                  onSort={toggleSort}
+                />
+                <SortTh
+                  label="An"
+                  col="year"
+                  sortKey={sortKey}
+                  sortDir={sortDir}
+                  onSort={toggleSort}
+                />
+                <SortTh
+                  label="KM"
+                  col="mileage"
+                  sortKey={sortKey}
+                  sortDir={sortDir}
+                  onSort={toggleSort}
+                />
+                <SortTh
+                  label="Preț"
+                  col="price"
+                  sortKey={sortKey}
+                  sortDir={sortDir}
+                  onSort={toggleSort}
+                />
+                <SortTh
+                  label="Adăugat"
+                  col="created_at"
+                  sortKey={sortKey}
+                  sortDir={sortDir}
+                  onSort={toggleSort}
+                />
+                <SortTh
+                  label="Status"
+                  col="status"
+                  sortKey={sortKey}
+                  sortDir={sortDir}
+                  onSort={toggleSort}
+                />
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
@@ -78,7 +176,7 @@ function AdminCarsPage() {
                   </td>
                 </tr>
               ) : (
-                cars.map((c) => (
+                pageRows.map((c) => (
                   <tr key={c.id}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
@@ -141,7 +239,77 @@ function AdminCarsPage() {
             </tbody>
           </table>
         </div>
+
+        {!isLoading && sorted.length > 0 && (
+          <div className="flex items-center justify-between gap-4 border-t border-border px-4 py-3 text-sm">
+            <div className="text-muted-foreground">
+              {start + 1}–{Math.min(start + PAGE_SIZE, sorted.length)} din {sorted.length}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPage(current - 1)}
+                disabled={current <= 1}
+                className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs hover:bg-secondary disabled:opacity-40 disabled:hover:bg-card"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" /> Anterior
+              </button>
+              <span className="text-xs text-muted-foreground">
+                Pagina {current} / {pageCount}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage(current + 1)}
+                disabled={current >= pageCount}
+                className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs hover:bg-secondary disabled:opacity-40 disabled:hover:bg-card"
+              >
+                Următor <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
+  );
+}
+
+function SortTh({
+  label,
+  col,
+  sortKey,
+  sortDir,
+  onSort,
+}: {
+  label: string;
+  col: SortKey;
+  sortKey: SortKey;
+  sortDir: SortDir;
+  onSort: (key: SortKey) => void;
+}) {
+  const active = sortKey === col;
+  return (
+    <th
+      className="px-4 py-3"
+      aria-sort={active ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
+    >
+      <button
+        type="button"
+        onClick={() => onSort(col)}
+        className={`group inline-flex items-center gap-1 uppercase transition-colors hover:text-foreground ${
+          active ? "text-foreground" : ""
+        }`}
+      >
+        {label}
+        {active ? (
+          sortDir === "asc" ? (
+            <ChevronUp className="h-3.5 w-3.5" />
+          ) : (
+            <ChevronDown className="h-3.5 w-3.5" />
+          )
+        ) : (
+          <ChevronsUpDown className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-50" />
+        )}
+      </button>
+    </th>
   );
 }
