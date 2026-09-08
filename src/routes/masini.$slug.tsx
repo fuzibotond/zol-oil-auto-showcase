@@ -142,9 +142,13 @@ function CarDetail() {
 
       {/* ── Main content ── */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
-        <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
           {/* LEFT COLUMN */}
-          <div className="space-y-6">
+          {/* min-w-0 lets this flexible column shrink below its content's
+              intrinsic width. Without it, a large gallery image (e.g. a 2000px
+              upload) forces the `1fr` track's automatic minimum wide enough to
+              push the sidebar off-screen and cause horizontal overflow. */}
+          <div className="min-w-0 space-y-6">
             {/* Title block */}
             <div>
               <div className="flex flex-wrap items-center gap-2">
