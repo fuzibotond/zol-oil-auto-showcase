@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Facebook, MapPin, Phone, Mail } from "lucide-react";
 import { SITE, SAL } from "@/lib/site";
+import { openCookieSettings } from "@/lib/consent";
 import { useSiteSettings } from "@/hooks/use-site-settings";
 import { useCompanyInfo } from "@/hooks/use-company-info";
 
@@ -106,6 +107,9 @@ export function Footer() {
               <Link to="/termeni" className="hover:text-foreground">
                 Termeni și condiții
               </Link>
+              <button type="button" onClick={openCookieSettings} className="hover:text-foreground">
+                Setări cookie-uri
+              </button>
             </nav>
 
             {/* Center — copyright */}

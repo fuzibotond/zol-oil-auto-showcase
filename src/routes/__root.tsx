@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { GTM_ID, consentDefaultScript, gtmLoaderScript } from "@/lib/consent";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { CookieConsent } from "@/components/site/CookieConsent";
@@ -110,8 +111,29 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="ro">
       <head>
         <HeadContent />
+        {/* Google Tag Manager — Consent Mode v2 defaults (denied) are set first,
+            then the GTM loader. GA4 + Meta Pixel are configured as tags inside
+            GTM. Renders only when VITE_GTM_ID is set at build time. */}
+        {GTM_ID ? (
+          <>
+            <script dangerouslySetInnerHTML={{ __html: consentDefaultScript() }} />
+            <script dangerouslySetInnerHTML={{ __html: gtmLoaderScript(GTM_ID) }} />
+          </>
+        ) : null}
       </head>
       <body suppressHydrationWarning>
+        {/* GTM noscript fallback for browsers with JavaScript disabled. */}
+        {GTM_ID ? (
+          <noscript>
+            <iframe
+              src={`https://www.googletagmanager.com/ns.html?id=${GTM_ID}`}
+              height="0"
+              width="0"
+              style={{ display: "none", visibility: "hidden" }}
+              title="gtm"
+            />
+          </noscript>
+        ) : null}
         {children}
         <Scripts />
       </body>

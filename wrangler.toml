@@ -22,7 +22,17 @@ migrations_dir = "migrations/d1"
 binding = "R2"
 bucket_name = "zol-oil-images"
 
-# [vars]
+[vars]
+# Public, build-time vars (VITE_ prefix). Cloudflare Pages injects [vars] into the
+# CI build, and Vite inlines any VITE_-prefixed value into the client bundle.
+# Google Tag Manager container — tracking is consent-gated (Consent Mode v2);
+# GA4 + Meta Pixel are configured as tags INSIDE GTM, not here.
+VITE_GTM_ID = "GTM-K7TXVR2Q"
+
+# Canonical origin — powers sitemap.xml, robots.txt and SEO canonical/OG tags.
+# Currently UNSET, which breaks those. Set once the final domain is decided, e.g.:
+# VITE_SITE_URL = "https://www.zoloil.ro"   # or the <project>.pages.dev URL for now
+
 # Custom image-delivery base URL (attach a custom domain to the R2 bucket; no r2.dev in prod).
 # Left unset for now → images are served same-origin via the /img/<key> route.
 # R2_PUBLIC_BASE_URL = "https://img.zol-oil.ro"
