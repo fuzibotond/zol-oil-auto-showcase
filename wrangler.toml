@@ -37,11 +37,11 @@ service = "zol-oil-mailer"
 VITE_GTM_ID = "GTM-K7TXVR2Q"
 VITE_SITE_URL = "https://zoloil.ro"
 
-# Canonical origin — DECIDED 2026-10-25: https://zoloil.ro (non-www, no trailing slash).
-# Powers sitemap.xml, robots.txt, canonical/OG tags AND the www -> apex 301 in
-# src/server.ts. VITE_SITE_URL is a BUILD-time var (Vite inlines it): it is set in the
-# Cloudflare Pages dashboard (Settings -> Variables and Secrets, Production), where the
-# old value https://www.zoloil.ro lived. Change it there; see docs/SEO_AUDIT_2026-10.md §5.
+# VITE_SITE_URL = canonical origin, DECIDED 2026-10-25: https://zoloil.ro (non-www, no
+# trailing slash). Powers sitemap.xml, robots.txt, canonical/OG tags AND the www -> apex
+# 301 in src/server.ts. Defined ONLY here: Pages injects these [vars] into the build (Vite
+# inlines them). Do NOT also create VITE_SITE_URL (or VITE_GTM_ID) in the Pages dashboard —
+# a duplicate name fails the deploy with "Binding name 'VITE_SITE_URL' already in use".
 
 # Custom image-delivery base URL (attach a custom domain to the R2 bucket; no r2.dev in prod).
 # Left unset for now → images are served same-origin via the /img/<key> route.
