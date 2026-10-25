@@ -116,18 +116,14 @@ See the PR/commit description; summary by area:
 ## 5. Manual action list (owner)
 
 ### Domain / Cloudflare — canonical host is **`https://zoloil.ro`** (non-www)
-1. **Pages build variable.** Cloudflare dashboard → Workers & Pages → project **zol-oil** →
-   Settings → *Variables and Secrets* → **Production** environment:
-   - `VITE_SITE_URL` = `https://zoloil.ro` (exactly: https, no `www`, **no trailing slash**),
-     type *Text* (not *Secret* — Vite must read it at build time). Edit the existing value
-     (`https://www.zoloil.ro`); don't add a second one.
-   - If the page says variables are *managed by wrangler.toml*, instead add
-     `VITE_SITE_URL = "https://zoloil.ro"` under `[vars]` in `wrangler.toml` (next to
-     `VITE_GTM_ID`) and commit.
-   - Preview environment: leave it unset (previews then keep relative URLs and are not
-     redirected), or set it to the preview URL — never to `https://zoloil.ro`.
-   - Save, then **Deployments → latest production deployment → Retry deployment** (or push a
-     commit). The variable is inlined at build time, so a rebuild is required.
+1. **Pages build variable.** `VITE_SITE_URL = "https://zoloil.ro"` is defined in
+   `wrangler.toml` under `[vars]` (next to `VITE_GTM_ID`) — Pages injects it into the build.
+   It must **not** also exist in the dashboard: Cloudflare dashboard → Workers & Pages →
+   **zol-oil** → Settings → *Variables and Secrets* → in **Production** (and **Preview**)
+   **delete** any `VITE_SITE_URL` entry (variable or secret; it held the old
+   `https://www.zoloil.ro`). A duplicate name makes the deploy fail with
+   `Binding name 'VITE_SITE_URL' already in use` (seen on 2026-10-25). Then **Deployments →
+   latest production deployment → Retry deployment**.
 2. **Custom domains** (same project → Custom domains): keep **both** `zoloil.ro` and
    `www.zoloil.ro` attached and *Active* — www must keep resolving so it can redirect.
 3. **Edge redirect (recommended).** Zone `zoloil.ro` → Rules → *Redirect Rules* → Create rule
@@ -193,9 +189,9 @@ See the PR/commit description; summary by area:
 ## 6. Risks / not verified
 
 - Not deployed: no production measurement after the changes; local A/B excludes car photos.
-- Canonical-host 301 follows `VITE_SITE_URL`: until the Pages variable is changed to
-  `https://zoloil.ro`, a deploy would still redirect apex → **www** (the old value). Change the
-  variable before/with the deploy, then run the §5.5 checks.
+- Canonical-host 301 follows `VITE_SITE_URL` (now `https://zoloil.ro` from `wrangler.toml`).
+  If a dashboard copy of the variable is left in place the deploy fails (duplicate binding);
+  delete it, redeploy, then run the §5.5 checks.
 - Sold cars become `noindex`: intended; if the owner prefers keeping them indexed, flip
   `noindex` in `src/routes/masini.$slug.tsx`.
 - GA4/Meta events and lead e-mails were not tested end-to-end (no account access).
