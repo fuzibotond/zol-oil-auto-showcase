@@ -144,6 +144,10 @@ for (const [path, status, location] of [
   ["/index.php?cat=contact", 301, "/contact"],
   ["/masini/acest-slug-nu-exista", 404],
   ["/pagina-inexistenta", 404],
+  ["/masini/marca/marca-inexistenta", 404],
+  ["/masini/", 301, "/masini"],
+  ["/MASINI", 301, "/masini"],
+  ["/Contact/", 301, "/contact"],
 ]) {
   const r = await fetch(base + path, { redirect: "manual" });
   const loc = r.headers.get("location");
@@ -158,6 +162,40 @@ for (const [path, status, location] of [
   check(
     r.status === 302 || xr.includes("noindex"),
     `/admin is behind Access (302) or noindex (${r.status}, x-robots-tag="${xr}")`,
+  );
+}
+
+// Discovery: every sitemap car is linked from the listing HTML (no orphans), and
+// category links on home/listing point only at pages that are in the sitemap
+// (i.e. indexable — no links to empty noindex categories).
+console.log("\ninternal linking");
+{
+  const sitemapPaths = new Set(locs.map((l) => new URL(l).pathname));
+  const listing = (await get("/masini")).text;
+  const linked = new Set([...listing.matchAll(/href="(\/masini\/[^"#?]+)"/g)].map((m) => m[1]));
+  const orphans = carLocs.map((l) => new URL(l).pathname).filter((p) => !linked.has(p));
+  check(
+    orphans.length === 0,
+    orphans.length
+      ? `orphan cars: ${orphans.join(", ")}`
+      : "every sitemap car is linked from /masini",
+  );
+  const catLinks = [home.text, listing]
+    .flatMap((h) => [
+      ...h.matchAll(/href="(\/masini\/(?:marca|combustibil|cutie|pret)\/[^"#?]+)"/g),
+    ])
+    .map((m) => m[1]);
+  const deadCats = [...new Set(catLinks)].filter((p) => !sitemapPaths.has(p));
+  check(
+    deadCats.length === 0,
+    deadCats.length
+      ? `links to non-indexable categories: ${deadCats.join(", ")}`
+      : `${new Set(catLinks).size} category links, all indexable`,
+  );
+  const q = await get("/masini?sort=price&utm_source=test");
+  check(
+    canonicalOf(q.text) === `${canonical}/masini`,
+    "query-string variant canonicalises to /masini",
   );
 }
 

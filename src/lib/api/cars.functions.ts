@@ -32,6 +32,21 @@ export const getCarBySlug = createServerFn({ method: "GET" })
     return repo.getCarBySlug(slug);
   });
 
+/**
+ * Unsold-stock summary for the homepage: the in-stock count plus which category
+ * pages have cars (so only indexable categories are linked). One light query.
+ */
+export const availableStockSummary = createServerFn({ method: "GET" }).handler(async () => {
+  const { facetStock } = await import("@/lib/landing");
+  try {
+    const repo = await import("@/lib/db/repository");
+    const rows = await repo.availableCarFacets();
+    return { count: rows.length, stock: facetStock(rows) };
+  } catch {
+    return { count: 0, stock: facetStock([]) };
+  }
+});
+
 export const countAvailableCars = createServerFn({ method: "GET" }).handler(async () => {
   try {
     const repo = await import("@/lib/db/repository");

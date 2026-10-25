@@ -224,6 +224,20 @@ export async function countCars(opts: { inStockOnly?: boolean } = {}): Promise<n
   return row?.n ?? 0;
 }
 
+/** Facet fields of every public, unsold car — a light query (no image rows). */
+export async function availableCarFacets(): Promise<
+  Array<Pick<Car, "status" | "fuel_type" | "transmission" | "price">>
+> {
+  const db = getDB();
+  const { results } = await db
+    .prepare(
+      `SELECT status, fuel_type, transmission, price FROM cars
+       WHERE is_hidden = 0 AND status <> 'vandut'`,
+    )
+    .all<{ status: string; fuel_type: string; transmission: string; price: number }>();
+  return results.map((r) => ({ ...r, status: r.status as CarStatus }));
+}
+
 export async function listCarSlugs(): Promise<{ slug: string; updated_at: string }[]> {
   const db = getDB();
   const { results } = await db

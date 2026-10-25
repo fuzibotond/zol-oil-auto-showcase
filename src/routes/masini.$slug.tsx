@@ -151,9 +151,14 @@ function CarDetail() {
   }
 
   const current = images[idx];
-  const mainAlt = (i: number) =>
-    images[i]?.alt_text ||
-    `${heading} ${car.fuel_type} ${car.transmission} — fotografia ${i + 1} din ${images.length}`;
+  // The admin pre-fills every photo's alt with just "Brand Model"; treat that
+  // default as empty so each photo gets a distinct, descriptive alt.
+  const genericAlt = `${car.brand} ${car.model}`.trim().toLowerCase();
+  const mainAlt = (i: number) => {
+    const custom = images[i]?.alt_text?.trim();
+    const generated = `${heading} ${car.fuel_type} ${car.transmission} — fotografia ${i + 1} din ${images.length}`;
+    return custom && custom.toLowerCase() !== genericAlt ? custom : generated;
+  };
 
   return (
     <div className="pb-28 md:pb-0">

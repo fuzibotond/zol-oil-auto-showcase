@@ -1,8 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { adoptRequestEnv } from "@/lib/db/env";
-import { FUEL_TYPES, TRANSMISSIONS } from "@/lib/site";
-import { PRICE_BANDS, brandsFromCars, inPriceBand, isAvailable } from "@/lib/landing";
+import { brandsFromCars, facetStock, isAvailable } from "@/lib/landing";
 import { slugify } from "@/lib/format";
 
 const BASE_URL = (import.meta.env.VITE_SITE_URL ?? "").replace(/\/$/, "");
@@ -60,18 +59,12 @@ export const Route = createFileRoute("/sitemap.xml")({
           }
 
           for (const b of brandsFromCars(cars)) entries.push({ path: `/masini/marca/${b.slug}` });
-          for (const f of FUEL_TYPES) {
-            if (cars.some((c) => c.fuel_type === f))
-              entries.push({ path: `/masini/combustibil/${slugify(f)}` });
-          }
-          for (const t of TRANSMISSIONS) {
-            if (cars.some((c) => c.transmission === t))
-              entries.push({ path: `/masini/cutie/${slugify(t)}` });
-          }
-          for (const band of PRICE_BANDS) {
-            if (cars.some((c) => inPriceBand(c, band)))
-              entries.push({ path: `/masini/pret/${band.slug}` });
-          }
+          // Same rule as the on-site category links: only categories with stock.
+          const stock = facetStock(cars);
+          for (const f of stock.fuels) entries.push({ path: `/masini/combustibil/${slugify(f)}` });
+          for (const t of stock.transmissions)
+            entries.push({ path: `/masini/cutie/${slugify(t)}` });
+          for (const slug of stock.priceBands) entries.push({ path: `/masini/pret/${slug}` });
         } catch {
           // D1 not reachable — still emit the static routes above.
         }
