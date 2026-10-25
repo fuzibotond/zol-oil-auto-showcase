@@ -78,6 +78,21 @@ function legacyRedirect(url: URL): string | null {
   return null;
 }
 
+// One URL per page: "/masini/" and "/MASINI" used to answer 307 / 200, giving
+// Google duplicate or temporary-redirect URLs. Redirect them permanently to
+// the canonical lowercase, no-trailing-slash path. Percent-escapes (%C8%99)
+// keep their case; technical paths (server fns, images, assets) are untouched.
+const NO_NORMALIZE = /^\/(_serverFn|img|assets|fonts|hero|api)(\/|$)/;
+
+function normalizedPath(url: URL): string | null {
+  const path = url.pathname;
+  if (path === "/" || NO_NORMALIZE.test(path)) return null;
+  const target = path
+    .replace(/\/+$/, "")
+    .replace(/%[0-9A-Fa-f]{2}|[A-Z]/g, (m) => (m.length === 3 ? m : m.toLowerCase()));
+  return target && target !== path ? target : null;
+}
+
 function isLegacyGone(url: URL): boolean {
   const path = url.pathname.toLowerCase();
   return (
@@ -117,6 +132,14 @@ export default {
       if (legacyTarget) {
         return withSecurityHeaders(
           new Response(null, { status: 301, headers: { Location: legacyTarget } }),
+        );
+      }
+
+      const isRead = request.method === "GET" || request.method === "HEAD";
+      const cleanPath = isRead && !isLegacyGone(url) ? normalizedPath(url) : null;
+      if (cleanPath) {
+        return withSecurityHeaders(
+          new Response(null, { status: 301, headers: { Location: cleanPath + url.search } }),
         );
       }
 

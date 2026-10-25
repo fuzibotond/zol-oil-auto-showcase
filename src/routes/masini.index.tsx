@@ -6,7 +6,7 @@ import { CarCard } from "@/components/site/CarCard";
 import { Breadcrumbs } from "@/components/site/Breadcrumbs";
 import { FUEL_TYPES, TRANSMISSIONS, BODY_TYPES, SITE } from "@/lib/site";
 import { JsonLd, seoHead, itemListJsonLd, breadcrumbJsonLd } from "@/lib/seo";
-import { facetPath, PRICE_BANDS, brandsFromCars, inPriceBand, isAvailable } from "@/lib/landing";
+import { facetPath, PRICE_BANDS, brandsFromCars, facetStock, isAvailable } from "@/lib/landing";
 import { slugify } from "@/lib/format";
 import { trackFilter } from "@/lib/analytics";
 
@@ -104,9 +104,10 @@ function InventoryPage() {
   // Category links only where unsold stock exists (empty categories are noindex).
   const inStock = useMemo(() => cars.filter(isAvailable), [cars]);
   const brandLinks = useMemo(() => brandsFromCars(inStock).slice(0, 12), [inStock]);
-  const fuelLinks = FUEL_TYPES.filter((f) => inStock.some((c) => c.fuel_type === f));
-  const transLinks = TRANSMISSIONS.filter((t) => inStock.some((c) => c.transmission === t));
-  const priceLinks = PRICE_BANDS.filter((b) => inStock.some((c) => inPriceBand(c, b)));
+  const stock = useMemo(() => facetStock(cars), [cars]);
+  const fuelLinks = stock.fuels;
+  const transLinks = stock.transmissions;
+  const priceLinks = PRICE_BANDS.filter((b) => stock.priceBands.includes(b.slug));
 
   function resetAll() {
     setQ("");

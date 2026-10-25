@@ -1,9 +1,9 @@
 ﻿import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, ShieldCheck, MapPin, Phone, Facebook } from "lucide-react";
-import { listCars, countAvailableCars } from "@/lib/api/cars.functions";
+import { listCars, availableStockSummary } from "@/lib/api/cars.functions";
 import { getSiteSettings } from "@/lib/api/site-settings.functions";
 import { CarCard } from "@/components/site/CarCard";
-import { SITE, mapsEmbedUrl, FUEL_TYPES } from "@/lib/site";
+import { SITE, mapsEmbedUrl } from "@/lib/site";
 import { useSiteSettings } from "@/hooks/use-site-settings";
 import { useCompanyInfo } from "@/hooks/use-company-info";
 import { JsonLd, seoHead, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
@@ -26,19 +26,19 @@ const HERO_SIZES = "(min-width: 1240px) 640px, 52vw";
 
 export const Route = createFileRoute("/")({
   loader: async () => {
-    // getSiteSettings / countAvailableCars already fall back safely; guard the
+    // getSiteSettings / availableStockSummary already fall back safely; guard the
     // car reads so a transient D1 hiccup renders an empty homepage, not an error.
     const settings = await getSiteSettings();
-    const carCount = await countAvailableCars();
+    const { count: carCount, stock } = await availableStockSummary();
     try {
       // Only cars a buyer can still get — sold cars don't belong on the homepage.
       const [featured, latest] = await Promise.all([
         listCars({ data: { featured: true, limit: 6, availableOnly: true } }),
         listCars({ data: { limit: 6, availableOnly: true } }),
       ]);
-      return { featured, latest, carCount, settings };
+      return { featured, latest, carCount, stock, settings };
     } catch {
-      return { featured: [], latest: [], carCount, settings };
+      return { featured: [], latest: [], carCount, stock, settings };
     }
   },
   head: () =>
@@ -51,7 +51,7 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
-  const { featured, latest, carCount, settings: srvSettings } = Route.useLoaderData();
+  const { featured, latest, carCount, stock, settings: srvSettings } = Route.useLoaderData();
   const { settings } = useSiteSettings();
   const { company } = useCompanyInfo();
   const facebook = settings.social_links.find((x) => x.key === "facebook");
@@ -525,7 +525,8 @@ function HomePage() {
           {SITE.city}, {SITE.county}.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "1.25rem" }}>
-          {FUEL_TYPES.map((f) => (
+          {/* Only categories with unsold stock — empty ones are noindex pages. */}
+          {stock.fuels.map((f) => (
             <a
               key={f}
               href={facetPath("combustibil", slugify(f))}
@@ -542,7 +543,7 @@ function HomePage() {
               Mașini {f.toLowerCase()}
             </a>
           ))}
-          {PRICE_BANDS.map((b) => (
+          {PRICE_BANDS.filter((b) => stock.priceBands.includes(b.slug)).map((b) => (
             <a
               key={b.slug}
               href={facetPath("pret", b.slug)}

@@ -170,14 +170,40 @@ export function facetPath(kind: FacetKind, slug: string): string {
  * A curated set of internal links to related collections, excluding the current
  * page. Powers the "Caută și după" internal-linking block on landing pages.
  */
-export function relatedFacetLinks(currentPath: string): { label: string; href: string }[] {
+export function relatedFacetLinks(
+  currentPath: string,
+  stock: FacetStock,
+): { label: string; href: string }[] {
   const links: { label: string; href: string }[] = [];
-  for (const f of FUEL_TYPES) links.push({ label: f, href: facetPath("combustibil", slugify(f)) });
-  for (const t of TRANSMISSIONS)
+  for (const f of stock.fuels) links.push({ label: f, href: facetPath("combustibil", slugify(f)) });
+  for (const t of stock.transmissions)
     links.push({ label: `Cutie ${t.toLowerCase()}`, href: facetPath("cutie", slugify(t)) });
-  for (const b of PRICE_BANDS)
+  for (const b of PRICE_BANDS.filter((b) => stock.priceBands.includes(b.slug)))
     links.push({ label: `Preț ${b.label}`, href: facetPath("pret", b.slug) });
   return links.filter((l) => l.href !== currentPath);
+}
+
+/** Which category pages currently have unsold stock (i.e. are indexable). */
+export interface FacetStock {
+  fuels: string[];
+  transmissions: string[];
+  priceBands: string[];
+}
+
+/**
+ * Category pages worth linking: only those with at least one unsold car. Links
+ * to empty (noindex) categories waste crawl budget and show up in Search
+ * Console as "Excluded by noindex" / soft 404.
+ */
+export function facetStock(
+  cars: Array<Pick<Car, "status" | "fuel_type" | "transmission" | "price">>,
+): FacetStock {
+  const stock = cars.filter(isAvailable);
+  return {
+    fuels: FUEL_TYPES.filter((f) => stock.some((c) => c.fuel_type === f)),
+    transmissions: TRANSMISSIONS.filter((t) => stock.some((c) => c.transmission === t)),
+    priceBands: PRICE_BANDS.filter((b) => stock.some((c) => inPriceBand(c, b))).map((b) => b.slug),
+  };
 }
 
 // ---------------------------------------------------------------------------
