@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { adminListLeads, adminUpdateLeadStatus } from "@/lib/api/cars.functions";
-import { Phone, Mail } from "lucide-react";
+import { adminDeleteLead, adminListLeads, adminUpdateLeadStatus } from "@/lib/api/cars.functions";
+import { Phone, Mail, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -23,6 +23,7 @@ export const Route = createFileRoute("/admin/leaduri")({
 function LeadsPage() {
   const list = useServerFn(adminListLeads);
   const update = useServerFn(adminUpdateLeadStatus);
+  const del = useServerFn(adminDeleteLead);
   const qc = useQueryClient();
   const {
     data: leads = [],
@@ -38,6 +39,17 @@ function LeadsPage() {
       qc.invalidateQueries({ queryKey: ["admin", "leads"] });
     } catch (e: any) {
       toast.error(e?.message ?? "Eroare");
+    }
+  }
+
+  async function onDelete(id: string, name: string) {
+    if (!confirm(`Ștergi leadul de la ${name}? Acțiunea este definitivă.`)) return;
+    try {
+      await del({ data: id });
+      toast.success("Lead șters");
+      qc.invalidateQueries({ queryKey: ["admin", "leads"] });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Eroare la ștergere");
     }
   }
 
@@ -109,7 +121,7 @@ function LeadsPage() {
                     </p>
                   )}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   {(["nou", "contactat", "inchis"] as const).map((s) => (
                     <button
                       key={s}
@@ -120,6 +132,13 @@ function LeadsPage() {
                       {STATUS_LABELS[s]}
                     </button>
                   ))}
+                  <button
+                    onClick={() => onDelete(l.id, l.name)}
+                    aria-label={`Șterge leadul de la ${l.name}`}
+                    className="inline-flex items-center gap-1 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" /> Șterge
+                  </button>
                 </div>
               </div>
             </div>

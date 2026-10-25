@@ -218,9 +218,10 @@ export const adminUpdateLeadStatus = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// Permanent. The lead's lead_notifications rows survive with lead_id = NULL.
 export const adminDeleteLead = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
-  .validator((id: string) => id)
+  .validator(z.string().uuid())
   .handler(async ({ data: id }) => {
     const repo = await import("@/lib/db/repository");
     await repo.deleteLead(id);
