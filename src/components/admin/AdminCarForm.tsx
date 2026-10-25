@@ -7,6 +7,7 @@ import { Trash2, GripVertical, Plus } from "lucide-react";
 import { adminUpsertCar } from "@/lib/api/cars.functions";
 import type { Car } from "@/lib/types";
 import { slugify } from "@/lib/format";
+import { downscaleForUpload } from "@/lib/images/client-resize";
 import { FUEL_TYPES, TRANSMISSIONS, BODY_TYPES, STATUSES, STATUS_LABEL } from "@/lib/site";
 
 type ImageRow = { url: string; alt_text?: string | null; r2_key?: string | null };
@@ -54,10 +55,15 @@ export function AdminCarForm({ initial }: Props) {
   const [newImage, setNewImage] = useState("");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  // For a NEW car the slug follows brand/model/year until the admin edits it by
+  // hand (it used to freeze on the default year, giving e.g. ".../jetta-2021" for
+  // a 2009 car). Existing cars keep their slug: changing it would break the URL.
+  const [slugTouched, setSlugTouched] = useState(Boolean(initial));
+  const generatedSlug = slugify(`${form.brand}-${form.model}-${form.year}`);
 
   function autoSlug() {
-    if (!form.slug && form.brand && form.model) {
-      setForm((f) => ({ ...f, slug: slugify(`${form.brand}-${form.model}-${form.year}`) }));
+    if (!slugTouched && form.brand && form.model) {
+      setForm((f) => ({ ...f, slug: slugify(`${f.brand}-${f.model}-${f.year}`) }));
     }
   }
 
@@ -75,7 +81,7 @@ export function AdminCarForm({ initial }: Props) {
       const uploaded: ImageRow[] = [];
       for (const file of Array.from(files)) {
         const fd = new FormData();
-        fd.append("file", file);
+        fd.append("file", await downscaleForUpload(file));
         const res = await fetch("/api/upload", { method: "POST", body: fd });
         const body = (await res.json().catch(() => ({}))) as {
           url?: string;
@@ -115,7 +121,7 @@ export function AdminCarForm({ initial }: Props) {
     try {
       const payload = {
         ...form,
-        slug: form.slug || slugify(`${form.brand}-${form.model}-${form.year}`),
+        slug: (slugTouched && form.slug) || generatedSlug,
         year: Number(form.year),
         price: Number(form.price),
         original_price: form.original_price ? Number(form.original_price) : null,
@@ -240,8 +246,11 @@ export function AdminCarForm({ initial }: Props) {
           </F>
           <F label="Slug (URL)">
             <input
-              value={form.slug}
-              onChange={(e) => setForm({ ...form, slug: e.target.value })}
+              value={slugTouched ? form.slug : generatedSlug}
+              onChange={(e) => {
+                setSlugTouched(true);
+                setForm({ ...form, slug: e.target.value });
+              }}
               placeholder="bmw-320d-2017"
               className={inputCls}
             />

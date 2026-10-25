@@ -1,51 +1,93 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { adoptRequestEnv } from "@/lib/db/env";
+import { FUEL_TYPES, TRANSMISSIONS } from "@/lib/site";
+import { PRICE_BANDS, brandsFromCars, inPriceBand, isAvailable } from "@/lib/landing";
+import { slugify } from "@/lib/format";
 
 const BASE_URL = (import.meta.env.VITE_SITE_URL ?? "").replace(/\/$/, "");
 
+interface Entry {
+  path: string;
+  lastmod?: string;
+  image?: string;
+}
+
+// Only canonical, indexable URLs belong here:
+// - hidden cars are excluded by listCars();
+// - sold cars are excluded (their pages are noindex and point to the stock);
+// - landing pages are listed only when they have unsold matching cars
+//   (otherwise they render noindex).
+// changefreq/priority are omitted on purpose — Google ignores them; lastmod is
+// only emitted where it reflects a real content change (car updated_at).
 export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
       GET: async ({ request }) => {
         adoptRequestEnv(request);
-        const entries: {
-          path: string;
-          changefreq?: string;
-          priority?: string;
-          lastmod?: string;
-        }[] = [
-          { path: "/", changefreq: "weekly", priority: "1.0" },
-          { path: "/masini", changefreq: "daily", priority: "0.9" },
-          { path: "/despre-noi", changefreq: "monthly", priority: "0.7" },
-          { path: "/contact", changefreq: "monthly", priority: "0.6" },
-          { path: "/confidentialitate", changefreq: "yearly", priority: "0.3" },
-          { path: "/politica-cookie", changefreq: "yearly", priority: "0.3" },
-          { path: "/termeni", changefreq: "yearly", priority: "0.3" },
+        const entries: Entry[] = [
+          { path: "/" },
+          { path: "/masini" },
+          { path: "/despre-noi" },
+          { path: "/contact" },
+          { path: "/confidentialitate" },
+          { path: "/politica-cookie" },
+          { path: "/termeni" },
         ];
 
         try {
           const repo = await import("@/lib/db/repository");
-          const cars = await repo.listCarSlugs();
+          const cars = (await repo.listCars({})).filter(isAvailable);
+
+          // Newest change across the stock = when the listing pages last changed.
+          const newest = cars.reduce<string | undefined>(
+            (max, c) => (!max || c.updated_at > max ? c.updated_at : max),
+            undefined,
+          );
+          if (newest) {
+            const iso = new Date(newest).toISOString();
+            entries[0].lastmod = iso;
+            entries[1].lastmod = iso;
+          }
+
+          // Individual car detail pages (with primary image for image sitemap).
           for (const c of cars) {
             entries.push({
               path: `/masini/${c.slug}`,
-              changefreq: "weekly",
-              priority: "0.8",
               lastmod: new Date(c.updated_at).toISOString(),
+              image: c.images?.[0]?.url,
             });
           }
+
+          for (const b of brandsFromCars(cars)) entries.push({ path: `/masini/marca/${b.slug}` });
+          for (const f of FUEL_TYPES) {
+            if (cars.some((c) => c.fuel_type === f))
+              entries.push({ path: `/masini/combustibil/${slugify(f)}` });
+          }
+          for (const t of TRANSMISSIONS) {
+            if (cars.some((c) => c.transmission === t))
+              entries.push({ path: `/masini/cutie/${slugify(t)}` });
+          }
+          for (const band of PRICE_BANDS) {
+            if (cars.some((c) => inPriceBand(c, band)))
+              entries.push({ path: `/masini/pret/${band.slug}` });
+          }
         } catch {
-          // D1 not reachable yet — still emit the static routes below.
+          // D1 not reachable — still emit the static routes above.
         }
+
+        const esc = (s: string) =>
+          s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        const absImg = (u: string) => (/^https?:\/\//i.test(u) ? u : `${BASE_URL}${u}`);
 
         const urls = entries.map((e) =>
           [
             "  <url>",
-            `    <loc>${BASE_URL}${e.path}</loc>`,
+            `    <loc>${esc(`${BASE_URL}${e.path}`)}</loc>`,
             e.lastmod ? `    <lastmod>${e.lastmod}</lastmod>` : null,
-            e.changefreq ? `    <changefreq>${e.changefreq}</changefreq>` : null,
-            e.priority ? `    <priority>${e.priority}</priority>` : null,
+            e.image
+              ? `    <image:image><image:loc>${esc(absImg(e.image))}</image:loc></image:image>`
+              : null,
             "  </url>",
           ]
             .filter(Boolean)
@@ -54,13 +96,16 @@ export const Route = createFileRoute("/sitemap.xml")({
 
         const xml = [
           '<?xml version="1.0" encoding="UTF-8"?>',
-          '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+          '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">',
           ...urls,
           "</urlset>",
         ].join("\n");
 
         return new Response(xml, {
-          headers: { "Content-Type": "application/xml", "Cache-Control": "public, max-age=3600" },
+          headers: {
+            "Content-Type": "application/xml; charset=utf-8",
+            "Cache-Control": "public, max-age=3600",
+          },
         });
       },
     },

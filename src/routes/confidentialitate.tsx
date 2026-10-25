@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { getLegalPage, LEGAL_META } from "@/lib/api/legal.functions";
 import { LegalArticle } from "@/components/site/LegalArticle";
 import { CONTACT_REQUIRED_LABELS } from "@/lib/site";
+import { seoHead } from "@/lib/seo";
 
 const SLUG = "confidentialitate" as const;
 
@@ -24,21 +25,21 @@ function RequiredDataNote() {
 
 export const Route = createFileRoute("/confidentialitate")({
   loader: async () => await getLegalPage({ data: SLUG }),
-  head: ({ loaderData }) => {
-    const title = `${loaderData?.title || LEGAL_META[SLUG].title} · ZOL-OIL`;
-    return {
-      meta: [
-        { title },
-        { name: "description", content: "Politica de confidențialitate — Parc Auto ZOL-OIL." },
-      ],
-      links: [{ rel: "canonical", href: `/${SLUG}` }],
-    };
-  },
-  component: () => (
+  head: ({ loaderData }) =>
+    seoHead({
+      title: `${loaderData?.title || LEGAL_META[SLUG].title} · ZOL-OIL`,
+      description: "Politica de confidențialitate — Parc Auto ZOL-OIL.",
+      path: `/${SLUG}`,
+    }),
+  component: PrivacyPage,
+});
+
+function PrivacyPage() {
+  return (
     <LegalArticle
       page={Route.useLoaderData()}
       fallbackTitle={LEGAL_META[SLUG].title}
       extra={<RequiredDataNote />}
     />
-  ),
-});
+  );
+}

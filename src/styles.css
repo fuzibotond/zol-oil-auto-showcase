@@ -4,6 +4,25 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Self-hosted variable fonts (SIL OFL), subset to Latin + Romanian/Hungarian
+   diacritics + common punctuation (one file per family, 73 KB total). Glyphs
+   outside the subset fall back to the system font. Replaces the render-blocking
+   Google Fonts stylesheet (which also sent visitor IPs to Google). */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/inter-ro.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Sora";
+  font-style: normal;
+  font-weight: 500 800;
+  font-display: swap;
+  src: url("/fonts/sora-ro.woff2") format("woff2");
+}
+
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -63,7 +82,8 @@
   --secondary-foreground: oklch(0.18 0.01 250);
   --muted: oklch(0.94 0.003 250);
   --muted-foreground: oklch(0.5 0.01 250);
-  --accent: oklch(0.55 0.13 155);
+  /* L 0.55 → 0.5: white-on-accent and accent text now pass WCAG AA 4.5:1. */
+  --accent: oklch(0.5 0.13 155);
   --accent-foreground: oklch(0.99 0 0);
   --destructive: oklch(0.58 0.22 28);
   --destructive-foreground: oklch(0.99 0 0);
@@ -73,7 +93,7 @@
   --warning-foreground: oklch(0.2 0.02 75);
   --border: oklch(0.9 0.003 250);
   --input: oklch(0.92 0.003 250);
-  --ring: oklch(0.55 0.13 155);
+  --ring: oklch(0.5 0.13 155);
 }
 
 .dark {
@@ -107,15 +127,41 @@
 }
 
 @layer base {
-  * { border-color: var(--color-border); }
-  html { -webkit-font-smoothing: antialiased; }
+  * {
+    border-color: var(--color-border);
+  }
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
     font-feature-settings: "ss01", "cv11";
   }
-  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+}
+
+/* Respect the OS "reduce motion" setting: no hover zooms, slides or smooth scroll. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 @utility glass-card {
@@ -133,4 +179,6 @@
   box-shadow: var(--shadow-card);
 }
 
-@utility text-balance { text-wrap: balance; }
+@utility text-balance {
+  text-wrap: balance;
+}

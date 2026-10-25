@@ -1,14 +1,16 @@
 import { Link } from "@tanstack/react-router";
-import { Gauge, Fuel, Cog, Calendar } from "lucide-react";
+import { Gauge, Fuel, Cog, Calendar, ImageOff } from "lucide-react";
 import type { Car } from "@/lib/types";
 import { fmtKm, fmtPrice, isRecent, priceDrop } from "@/lib/format";
+import { imgUrl, imgSrcSet, CAR_IMAGE_WIDTHS } from "@/lib/images/responsive";
 import { StatusBadge } from "./StatusBadge";
 
-const PLACEHOLDER =
-  "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1200&q=80&auto=format&fit=crop";
-
-export function CarCard({ car }: { car: Car }) {
-  const img = car.images?.[0]?.url ?? PLACEHOLDER;
+/**
+ * `priority` marks an above-the-fold card (first in a grid): its photo loads
+ * eagerly with high fetch priority because it is usually the page's LCP image.
+ */
+export function CarCard({ car, priority = false }: { car: Car; priority?: boolean }) {
+  const img = car.images?.[0]?.url ?? null;
   const drop = priceDrop(car.price, car.original_price);
   return (
     <Link
@@ -17,12 +19,26 @@ export function CarCard({ car }: { car: Car }) {
       className="group surface-card overflow-hidden flex flex-col transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-elevated)]"
     >
       <div className="relative aspect-[16/10] overflow-hidden bg-muted">
-        <img
-          src={img}
-          alt={`${car.brand} ${car.model} ${car.year}`}
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-          loading="lazy"
-        />
+        {img ? (
+          <img
+            src={imgUrl(img, 640)}
+            srcSet={imgSrcSet(img, CAR_IMAGE_WIDTHS.slice(0, 3))}
+            sizes="(min-width: 1280px) 400px, (min-width: 640px) 50vw, 100vw"
+            alt={`${car.brand} ${car.model} ${car.year}`}
+            width={640}
+            height={400}
+            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+            loading={priority ? "eager" : "lazy"}
+            fetchPriority={priority ? "high" : "auto"}
+            decoding="async"
+          />
+        ) : (
+          // No stock photo stand-in: a generic picture of another car would mislead.
+          <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground">
+            <ImageOff className="h-6 w-6" aria-hidden />
+            <span className="text-xs">Fotografii în curând</span>
+          </div>
+        )}
         <div className="absolute inset-x-3 top-3 flex items-start justify-between gap-2">
           <div className="flex flex-wrap gap-2">
             <StatusBadge status={car.status} />
@@ -47,9 +63,9 @@ export function CarCard({ car }: { car: Car }) {
       <div className="flex flex-1 flex-col p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="font-display text-lg font-semibold tracking-tight leading-tight">
+            <h3 className="font-display text-lg font-semibold tracking-tight leading-tight">
               {car.brand} {car.model}
-            </div>
+            </h3>
             {car.version && <div className="text-sm text-muted-foreground">{car.version}</div>}
           </div>
           <div className="text-right">
@@ -70,7 +86,9 @@ export function CarCard({ car }: { car: Car }) {
           <Spec icon={<Cog className="h-3.5 w-3.5" />} label={car.transmission} />
         </div>
         <div className="mt-5 flex items-center justify-between">
-          <span className="text-sm font-medium text-foreground">Vezi detalii →</span>
+          <span className="text-sm font-medium text-foreground" aria-hidden>
+            Vezi detalii →
+          </span>
         </div>
       </div>
     </Link>

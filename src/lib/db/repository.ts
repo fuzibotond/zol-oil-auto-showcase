@@ -165,20 +165,28 @@ async function imagesForCarIds(carIds: string[]): Promise<Map<string, CarImage[]
 // Public reads
 // ---------------------------------------------------------------------------
 export async function listCars(
-  opts: { featured?: boolean; limit?: number; includeHidden?: boolean } = {},
+  opts: {
+    featured?: boolean;
+    limit?: number;
+    includeHidden?: boolean;
+    availableOnly?: boolean;
+  } = {},
 ): Promise<Car[]> {
   const db = getDB();
   const clauses: string[] = [];
   const binds: unknown[] = [];
   if (opts.featured) clauses.push("is_featured = 1");
+  if (opts.availableOnly) clauses.push("status <> 'vandut'");
   // Public callers omit `includeHidden`; the admin passes it to see hidden cars.
   if (!opts.includeHidden) clauses.push("is_hidden = 0");
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
   const limit = opts.limit ? `LIMIT ${Math.max(1, Math.min(200, Math.floor(opts.limit)))}` : "";
+  // Public listings show cars a buyer can still get first; sold ones sink to the end.
+  const soldLast = opts.includeHidden ? "" : "(status = 'vandut') ASC, ";
   const { results } = await db
     .prepare(
       `SELECT * FROM cars ${where}
-       ORDER BY is_featured DESC, created_at DESC ${limit}`,
+       ORDER BY ${soldLast}is_featured DESC, created_at DESC ${limit}`,
     )
     .bind(...binds)
     .all<CarRow>();
@@ -224,11 +232,16 @@ export async function listCarSlugs(): Promise<{ slug: string; updated_at: string
   return results;
 }
 
+/**
+ * Alternatives for a car page: unsold cars, same brand first, then the rest of
+ * the stock — so even a one-off brand (or a sold car) always links onward.
+ */
 export async function similarCars(excludeId: string, brand: string, limit = 3): Promise<Car[]> {
   const db = getDB();
   const { results } = await db
     .prepare(
-      `SELECT * FROM cars WHERE id != ? AND brand = ? AND is_hidden = 0 ORDER BY created_at DESC LIMIT ?`,
+      `SELECT * FROM cars WHERE id != ? AND is_hidden = 0 AND status <> 'vandut'
+       ORDER BY (brand = ?) DESC, is_featured DESC, created_at DESC LIMIT ?`,
     )
     .bind(excludeId, brand, Math.max(1, Math.min(12, limit)))
     .all<CarRow>();

@@ -10,10 +10,19 @@ import type { Car, Lead } from "@/lib/types";
 // ---------- Public reads ----------
 
 export const listCars = createServerFn({ method: "GET" })
-  .validator((input: { featured?: boolean; limit?: number } | undefined) => input ?? {})
+  .validator(
+    (input: { featured?: boolean; limit?: number; availableOnly?: boolean } | undefined) =>
+      input ?? {},
+  )
   .handler(async ({ data }) => {
     const repo = await import("@/lib/db/repository");
-    return repo.listCars(data);
+    // Whitelist the options: a crafted request must not be able to pass
+    // `includeHidden` (admin-only) through to the repository.
+    return repo.listCars({
+      featured: data.featured === true,
+      limit: typeof data.limit === "number" ? data.limit : undefined,
+      availableOnly: data.availableOnly === true,
+    });
   });
 
 export const getCarBySlug = createServerFn({ method: "GET" })

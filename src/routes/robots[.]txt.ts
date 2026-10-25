@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 
 // Dynamic robots.txt so the Sitemap URL always matches the deployed origin
-// (VITE_SITE_URL). Set VITE_SITE_URL in the Pages env (e.g. https://nou.zoloil.ro).
+// (VITE_SITE_URL). Production: VITE_SITE_URL=https://zoloil.ro (non-www canonical).
 const BASE_URL = (import.meta.env.VITE_SITE_URL ?? "").replace(/\/$/, "");
 
 export const Route = createFileRoute("/robots.txt")({
@@ -14,6 +14,7 @@ export const Route = createFileRoute("/robots.txt")({
           "Allow: /",
           "Disallow: /admin",
           "Disallow: /auth",
+          "Disallow: /api",
           ...(BASE_URL ? [`Sitemap: ${BASE_URL}/sitemap.xml`] : []),
           "",
         ];

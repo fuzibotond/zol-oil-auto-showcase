@@ -32,6 +32,10 @@ import { Route as AdminLeaduriRouteImport } from './routes/admin.leaduri'
 import { Route as AdminDespreRouteImport } from './routes/admin.despre'
 import { Route as AdminCompanieRouteImport } from './routes/admin.companie'
 import { Route as AdminMasiniIndexRouteImport } from './routes/admin.masini.index'
+import { Route as MasiniPretPretRouteImport } from './routes/masini.pret.$pret'
+import { Route as MasiniMarcaMarcaRouteImport } from './routes/masini.marca.$marca'
+import { Route as MasiniCutieCutieRouteImport } from './routes/masini.cutie.$cutie'
+import { Route as MasiniCombustibilCombustibilRouteImport } from './routes/masini.combustibil.$combustibil'
 import { Route as AdminMasiniNouRouteImport } from './routes/admin.masini.nou'
 import { Route as AdminMasiniIdEditRouteImport } from './routes/admin.masini.$id.edit'
 
@@ -150,6 +154,27 @@ const AdminMasiniIndexRoute = AdminMasiniIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminMasiniRoute,
 } as any)
+const MasiniPretPretRoute = MasiniPretPretRouteImport.update({
+  id: '/pret/$pret',
+  path: '/pret/$pret',
+  getParentRoute: () => MasiniRoute,
+} as any)
+const MasiniMarcaMarcaRoute = MasiniMarcaMarcaRouteImport.update({
+  id: '/marca/$marca',
+  path: '/marca/$marca',
+  getParentRoute: () => MasiniRoute,
+} as any)
+const MasiniCutieCutieRoute = MasiniCutieCutieRouteImport.update({
+  id: '/cutie/$cutie',
+  path: '/cutie/$cutie',
+  getParentRoute: () => MasiniRoute,
+} as any)
+const MasiniCombustibilCombustibilRoute =
+  MasiniCombustibilCombustibilRouteImport.update({
+    id: '/combustibil/$combustibil',
+    path: '/combustibil/$combustibil',
+    getParentRoute: () => MasiniRoute,
+  } as any)
 const AdminMasiniNouRoute = AdminMasiniNouRouteImport.update({
   id: '/nou',
   path: '/nou',
@@ -185,6 +210,10 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/masini/': typeof MasiniIndexRoute
   '/admin/masini/nou': typeof AdminMasiniNouRoute
+  '/masini/combustibil/$combustibil': typeof MasiniCombustibilCombustibilRoute
+  '/masini/cutie/$cutie': typeof MasiniCutieCutieRoute
+  '/masini/marca/$marca': typeof MasiniMarcaMarcaRoute
+  '/masini/pret/$pret': typeof MasiniPretPretRoute
   '/admin/masini/': typeof AdminMasiniIndexRoute
   '/admin/masini/$id/edit': typeof AdminMasiniIdEditRoute
 }
@@ -209,6 +238,10 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/masini': typeof MasiniIndexRoute
   '/admin/masini/nou': typeof AdminMasiniNouRoute
+  '/masini/combustibil/$combustibil': typeof MasiniCombustibilCombustibilRoute
+  '/masini/cutie/$cutie': typeof MasiniCutieCutieRoute
+  '/masini/marca/$marca': typeof MasiniMarcaMarcaRoute
+  '/masini/pret/$pret': typeof MasiniPretPretRoute
   '/admin/masini': typeof AdminMasiniIndexRoute
   '/admin/masini/$id/edit': typeof AdminMasiniIdEditRoute
 }
@@ -237,6 +270,10 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/masini/': typeof MasiniIndexRoute
   '/admin/masini/nou': typeof AdminMasiniNouRoute
+  '/masini/combustibil/$combustibil': typeof MasiniCombustibilCombustibilRoute
+  '/masini/cutie/$cutie': typeof MasiniCutieCutieRoute
+  '/masini/marca/$marca': typeof MasiniMarcaMarcaRoute
+  '/masini/pret/$pret': typeof MasiniPretPretRoute
   '/admin/masini/': typeof AdminMasiniIndexRoute
   '/admin/masini/$id/edit': typeof AdminMasiniIdEditRoute
 }
@@ -266,6 +303,10 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/masini/'
     | '/admin/masini/nou'
+    | '/masini/combustibil/$combustibil'
+    | '/masini/cutie/$cutie'
+    | '/masini/marca/$marca'
+    | '/masini/pret/$pret'
     | '/admin/masini/'
     | '/admin/masini/$id/edit'
   fileRoutesByTo: FileRoutesByTo
@@ -290,6 +331,10 @@ export interface FileRouteTypes {
     | '/admin'
     | '/masini'
     | '/admin/masini/nou'
+    | '/masini/combustibil/$combustibil'
+    | '/masini/cutie/$cutie'
+    | '/masini/marca/$marca'
+    | '/masini/pret/$pret'
     | '/admin/masini'
     | '/admin/masini/$id/edit'
   id:
@@ -317,6 +362,10 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/masini/'
     | '/admin/masini/nou'
+    | '/masini/combustibil/$combustibil'
+    | '/masini/cutie/$cutie'
+    | '/masini/marca/$marca'
+    | '/masini/pret/$pret'
     | '/admin/masini/'
     | '/admin/masini/$id/edit'
   fileRoutesById: FileRoutesById
@@ -500,6 +549,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMasiniIndexRouteImport
       parentRoute: typeof AdminMasiniRoute
     }
+    '/masini/pret/$pret': {
+      id: '/masini/pret/$pret'
+      path: '/pret/$pret'
+      fullPath: '/masini/pret/$pret'
+      preLoaderRoute: typeof MasiniPretPretRouteImport
+      parentRoute: typeof MasiniRoute
+    }
+    '/masini/marca/$marca': {
+      id: '/masini/marca/$marca'
+      path: '/marca/$marca'
+      fullPath: '/masini/marca/$marca'
+      preLoaderRoute: typeof MasiniMarcaMarcaRouteImport
+      parentRoute: typeof MasiniRoute
+    }
+    '/masini/cutie/$cutie': {
+      id: '/masini/cutie/$cutie'
+      path: '/cutie/$cutie'
+      fullPath: '/masini/cutie/$cutie'
+      preLoaderRoute: typeof MasiniCutieCutieRouteImport
+      parentRoute: typeof MasiniRoute
+    }
+    '/masini/combustibil/$combustibil': {
+      id: '/masini/combustibil/$combustibil'
+      path: '/combustibil/$combustibil'
+      fullPath: '/masini/combustibil/$combustibil'
+      preLoaderRoute: typeof MasiniCombustibilCombustibilRouteImport
+      parentRoute: typeof MasiniRoute
+    }
     '/admin/masini/nou': {
       id: '/admin/masini/nou'
       path: '/nou'
@@ -558,11 +635,19 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 interface MasiniRouteChildren {
   MasiniSlugRoute: typeof MasiniSlugRoute
   MasiniIndexRoute: typeof MasiniIndexRoute
+  MasiniCombustibilCombustibilRoute: typeof MasiniCombustibilCombustibilRoute
+  MasiniCutieCutieRoute: typeof MasiniCutieCutieRoute
+  MasiniMarcaMarcaRoute: typeof MasiniMarcaMarcaRoute
+  MasiniPretPretRoute: typeof MasiniPretPretRoute
 }
 
 const MasiniRouteChildren: MasiniRouteChildren = {
   MasiniSlugRoute: MasiniSlugRoute,
   MasiniIndexRoute: MasiniIndexRoute,
+  MasiniCombustibilCombustibilRoute: MasiniCombustibilCombustibilRoute,
+  MasiniCutieCutieRoute: MasiniCutieCutieRoute,
+  MasiniMarcaMarcaRoute: MasiniMarcaMarcaRoute,
+  MasiniPretPretRoute: MasiniPretPretRoute,
 }
 
 const MasiniRouteWithChildren =

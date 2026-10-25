@@ -1,58 +1,65 @@
 ﻿import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { ArrowRight, ShieldCheck, MapPin, Phone, Facebook } from "lucide-react";
 import { listCars, countAvailableCars } from "@/lib/api/cars.functions";
+import { getSiteSettings } from "@/lib/api/site-settings.functions";
 import { CarCard } from "@/components/site/CarCard";
-import { SITE, mapsEmbedUrl } from "@/lib/site";
+import { SITE, mapsEmbedUrl, FUEL_TYPES } from "@/lib/site";
 import { useSiteSettings } from "@/hooks/use-site-settings";
+import { useCompanyInfo } from "@/hooks/use-company-info";
+import { JsonLd, seoHead, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
+import { facetPath, PRICE_BANDS } from "@/lib/landing";
+import { slugify } from "@/lib/format";
+import { trackContact } from "@/lib/analytics";
 
 const CREAM = "#EDEAE2";
 const DARK = "#252018";
 const OG = "#F15A22";
+// Brand orange darkened for SMALL text on cream: #F15A22 is only 2.8:1 there
+// (WCAG AA needs 4.5:1); this keeps the hue at ≥5:1 on cream and tinted cards.
+const OG_TEXT = "#A8370A";
+
+// Responsive hero (was a 2.9 MB PNG — the LCP element on mobile).
+const HERO_WIDTHS = [480, 768, 1080, 1440];
+const heroSrcSet = (ext: string) =>
+  HERO_WIDTHS.map((w) => `/hero/parc-auto-${w}.${ext} ${w}w`).join(", ");
+const HERO_SIZES = "(min-width: 1240px) 640px, 52vw";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "ZOL-OIL · Parc Auto în Cernat — mașini second-hand verificate" },
-      {
-        name: "description",
-        content:
-          "Parc Auto ZOL-OIL în Cernat, Covasna. Autoturisme rulate, verificate și pregătite pentru drum.",
-      },
-      { property: "og:title", content: "Parc Auto ZOL-OIL · Cernat" },
-      {
-        property: "og:description",
-        content: "Autoturisme rulate, verificate și pregătite pentru drum.",
-      },
-      { property: "og:url", content: "/" },
-    ],
-    links: [{ rel: "canonical", href: "/" }],
-  }),
+  loader: async () => {
+    // getSiteSettings / countAvailableCars already fall back safely; guard the
+    // car reads so a transient D1 hiccup renders an empty homepage, not an error.
+    const settings = await getSiteSettings();
+    const carCount = await countAvailableCars();
+    try {
+      // Only cars a buyer can still get — sold cars don't belong on the homepage.
+      const [featured, latest] = await Promise.all([
+        listCars({ data: { featured: true, limit: 6, availableOnly: true } }),
+        listCars({ data: { limit: 6, availableOnly: true } }),
+      ]);
+      return { featured, latest, carCount, settings };
+    } catch {
+      return { featured: [], latest: [], carCount, settings };
+    }
+  },
+  head: () =>
+    seoHead({
+      title: `Parc Auto ZOL-OIL ${SITE.city} · Mașini second-hand verificate în ${SITE.county}`,
+      description: `Parc Auto ZOL-OIL în ${SITE.city}, ${SITE.county}. Mașini second-hand rulate, verificate tehnic și pregătite de drum. Vezi stocul, prețurile și vino la o probă pe drum.`,
+      path: "/",
+    }),
   component: HomePage,
 });
 
 function HomePage() {
-  const fetchCars = useServerFn(listCars);
-  const fetchCount = useServerFn(countAvailableCars);
+  const { featured, latest, carCount, settings: srvSettings } = Route.useLoaderData();
   const { settings } = useSiteSettings();
+  const { company } = useCompanyInfo();
   const facebook = settings.social_links.find((x) => x.key === "facebook");
-  const { data: carCount = 0 } = useQuery({
-    queryKey: ["cars", "count"],
-    queryFn: () => fetchCount(),
-  });
-  const { data: featured = [] } = useQuery({
-    queryKey: ["cars", "featured"],
-    queryFn: () => fetchCars({ data: { featured: true, limit: 6 } }),
-  });
-  const { data: latest = [] } = useQuery({
-    queryKey: ["cars", "latest"],
-    queryFn: () => fetchCars({ data: { limit: 6 } }),
-  });
   const shown = featured.length ? featured : latest;
 
   return (
     <div style={{ background: CREAM }}>
+      <JsonLd data={[organizationJsonLd(srvSettings, company), websiteJsonLd()]} />
       {/* ===== POSTER HERO ===== */}
       <section
         style={{ position: "relative", overflow: "hidden", minHeight: "100svh", background: CREAM }}
@@ -114,12 +121,13 @@ function HomePage() {
           }}
         />
 
-        {/* Layer 2 — car in oval lens on the band */}
+        {/* Layer 2 — car in oval lens on the band. On phones it sits higher so
+            it doesn't cover the headline block at the bottom of the hero. */}
         <div
           aria-hidden
+          className="top-[30%] sm:top-1/2"
           style={{
             position: "absolute",
-            top: "50%",
             left: "50%",
             transform: "translate(-50%, -52%) rotate(-8deg)",
             width: "clamp(260px, 52vw, 640px)",
@@ -130,16 +138,24 @@ function HomePage() {
             boxShadow: "0 28px 72px rgba(0,0,0,0.42), 0 6px 20px rgba(0,0,0,0.22)",
           }}
         >
-          <img
-            src="/parc-auto.png"
-            alt=""
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              objectPosition: "center 55%",
-            }}
-          />
+          <picture>
+            <source type="image/avif" srcSet={heroSrcSet("avif")} sizes={HERO_SIZES} />
+            <source type="image/webp" srcSet={heroSrcSet("webp")} sizes={HERO_SIZES} />
+            <img
+              src="/hero/parc-auto-1080.webp"
+              alt=""
+              width={1448}
+              height={1086}
+              fetchPriority="high"
+              decoding="async"
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                objectPosition: "center 55%",
+              }}
+            />
+          </picture>
         </div>
 
         {/* Layer 3 — foreground layout */}
@@ -170,18 +186,8 @@ function HomePage() {
           >
             {/* Brand + CTA */}
             <div>
-              <div
-                style={{
-                  fontSize: "10px",
-                  fontWeight: 700,
-                  letterSpacing: "0.25em",
-                  textTransform: "uppercase",
-                  color: DARK + "88",
-                  marginBottom: "0.75rem",
-                }}
-              >
-                Parc Auto · {SITE.city}, {SITE.county}
-              </div>
+              {/* The eyebrow is part of the H1 so the page heading says what
+                  and where ("parc auto second-hand, Cernat"), not just the brand. */}
               <h1
                 style={{
                   fontFamily: "'Sora', system-ui, sans-serif",
@@ -193,6 +199,21 @@ function HomePage() {
                   margin: 0,
                 }}
               >
+                <span
+                  style={{
+                    display: "block",
+                    fontFamily: "'Inter', system-ui, sans-serif",
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    lineHeight: 1.4,
+                    letterSpacing: "0.25em",
+                    textTransform: "uppercase",
+                    color: DARK,
+                    marginBottom: "0.75rem",
+                  }}
+                >
+                  Parc auto second-hand · {SITE.city}, {SITE.county}
+                </span>
                 ZOL-OIL<span style={{ color: OG }}>.</span>
               </h1>
               <p
@@ -200,7 +221,7 @@ function HomePage() {
                   marginTop: "1rem",
                   fontSize: "clamp(0.9rem, 1.5vw, 1.1rem)",
                   lineHeight: 1.6,
-                  color: DARK + "99",
+                  color: DARK,
                   maxWidth: "21rem",
                 }}
               >
@@ -232,12 +253,14 @@ function HomePage() {
                   href={`https://wa.me/${settings.whatsapp}`}
                   target="_blank"
                   rel="noreferrer"
+                  onClick={() => trackContact("whatsapp", "home-hero")}
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
                     gap: "0.5rem",
                     background: OG,
-                    color: "#fff",
+                    // Dark text: white on the brand orange is only 3.4:1.
+                    color: DARK,
                     padding: "0.85rem 1.5rem",
                     borderRadius: "9999px",
                     fontSize: "0.875rem",
@@ -259,6 +282,7 @@ function HomePage() {
               }}
             >
               <div
+                aria-hidden
                 style={{
                   fontSize: "9px",
                   letterSpacing: "0.3em",
@@ -289,14 +313,16 @@ function HomePage() {
                   gap: "0.3rem",
                 }}
               >
-                <div style={{ fontSize: "11px", color: DARK + "65" }}>Locație: {SITE.city}</div>
-                <div style={{ fontSize: "11px", color: DARK + "65" }}>Județ: {SITE.county}</div>
-                <div style={{ fontSize: "11px", color: DARK + "65" }}>
+                {/* Solid DARK: this block can sit on the orange band (was 1.9:1). */}
+                <div style={{ fontSize: "11px", color: DARK }}>Locație: {SITE.city}</div>
+                <div style={{ fontSize: "11px", color: DARK }}>Județ: {SITE.county}</div>
+                <div style={{ fontSize: "11px", color: DARK }}>
                   {settings.opening_hours[0]?.day ?? "Luni - Vineri"} /{" "}
                   {settings.opening_hours[0]?.value ?? "09:00 - 18:00"}
                 </div>
               </div>
               <div
+                aria-hidden
                 style={{
                   marginTop: "0.75rem",
                   paddingTop: "0.75rem",
@@ -304,7 +330,7 @@ function HomePage() {
                   fontFamily: "'Sora', system-ui, sans-serif",
                   fontWeight: 700,
                   fontSize: "12px",
-                  color: DARK + "40",
+                  color: DARK,
                 }}
               >
                 {carCount > 0 ? `01 / ${carCount}` : "01"}
@@ -352,7 +378,7 @@ function HomePage() {
                     fontSize: "10px",
                     letterSpacing: "0.18em",
                     textTransform: "uppercase",
-                    color: CREAM + "50",
+                    color: CREAM + "b3",
                     marginTop: "0.1rem",
                   }}
                 >
@@ -384,7 +410,7 @@ function HomePage() {
                 fontWeight: 700,
                 letterSpacing: "0.22em",
                 textTransform: "uppercase",
-                color: OG,
+                color: OG_TEXT,
                 marginBottom: "0.4rem",
               }}
             >
@@ -411,8 +437,9 @@ function HomePage() {
               gap: "0.3rem",
               fontSize: "0.85rem",
               fontWeight: 600,
-              color: DARK + "70",
+              color: DARK + "cc",
               textDecoration: "none",
+              padding: "0.25rem 0",
             }}
           >
             Vezi toate <ArrowRight size={15} />
@@ -428,8 +455,8 @@ function HomePage() {
               border: `1px solid ${DARK}12`,
             }}
           >
-            <p style={{ color: DARK + "70" }}>
-              În curând adăugăm mașinile disponibile. Contactează-ne direct pentru oferte actuale.
+            <p style={{ color: DARK + "cc" }}>
+              Momentan nu avem mașini listate online. Contactează-ne pentru ofertele actuale.
             </p>
             <a
               href={`https://wa.me/${settings.whatsapp}`}
@@ -442,7 +469,7 @@ function HomePage() {
                 borderRadius: "9999px",
                 padding: "0.6rem 1.25rem",
                 background: OG,
-                color: "#fff",
+                color: DARK,
                 fontSize: "0.85rem",
                 fontWeight: 700,
                 textDecoration: "none",
@@ -458,6 +485,81 @@ function HomePage() {
             ))}
           </div>
         )}
+      </section>
+
+      {/* ===== POPULAR CATEGORIES (SEO internal links) ===== */}
+      <section
+        style={{
+          maxWidth: "1280px",
+          margin: "0 auto",
+          padding: "0 clamp(1.25rem, 4vw, 3rem)",
+          paddingBottom: "5rem",
+        }}
+      >
+        <div
+          style={{
+            fontSize: "10px",
+            fontWeight: 700,
+            letterSpacing: "0.22em",
+            textTransform: "uppercase",
+            color: OG_TEXT,
+            marginBottom: "0.4rem",
+          }}
+        >
+          Categorii populare
+        </div>
+        <h2
+          style={{
+            fontFamily: "'Sora', system-ui, sans-serif",
+            fontWeight: 900,
+            fontSize: "clamp(1.5rem, 3vw, 2.2rem)",
+            letterSpacing: "-0.02em",
+            color: DARK,
+            margin: "0 0 0.75rem",
+          }}
+        >
+          Găsește mașina potrivită
+        </h2>
+        <p style={{ fontSize: "0.9rem", color: DARK + "cc", maxWidth: "42rem", lineHeight: 1.6 }}>
+          Caută mașini second-hand după combustibil sau buget în stocul parcului auto ZOL-OIL din{" "}
+          {SITE.city}, {SITE.county}.
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "1.25rem" }}>
+          {FUEL_TYPES.map((f) => (
+            <a
+              key={f}
+              href={facetPath("combustibil", slugify(f))}
+              style={{
+                border: `1.5px solid ${DARK}22`,
+                color: DARK,
+                padding: "0.45rem 1rem",
+                borderRadius: "9999px",
+                fontSize: "0.8rem",
+                fontWeight: 600,
+                textDecoration: "none",
+              }}
+            >
+              Mașini {f.toLowerCase()}
+            </a>
+          ))}
+          {PRICE_BANDS.map((b) => (
+            <a
+              key={b.slug}
+              href={facetPath("pret", b.slug)}
+              style={{
+                border: `1.5px solid ${DARK}22`,
+                color: DARK,
+                padding: "0.45rem 1rem",
+                borderRadius: "9999px",
+                fontSize: "0.8rem",
+                fontWeight: 600,
+                textDecoration: "none",
+              }}
+            >
+              Mașini {b.label}
+            </a>
+          ))}
+        </div>
       </section>
 
       {/* ===== WHY US ===== */}
@@ -517,7 +619,7 @@ function HomePage() {
               >
                 {t}
               </div>
-              <div style={{ fontSize: "0.85rem", lineHeight: 1.6, color: DARK + "80" }}>{d}</div>
+              <div style={{ fontSize: "0.85rem", lineHeight: 1.6, color: DARK + "cc" }}>{d}</div>
             </div>
           ))}
         </div>
@@ -556,7 +658,7 @@ function HomePage() {
               >
                 Urmărește-ne pe Facebook
               </div>
-              <p style={{ fontSize: "0.85rem", color: CREAM + "70", marginTop: "0.3rem" }}>
+              <p style={{ fontSize: "0.85rem", color: CREAM + "cc", marginTop: "0.3rem" }}>
                 Postăm constant mașini noi pe Marketplace și pe pagina noastră.
               </p>
             </div>
@@ -569,7 +671,7 @@ function HomePage() {
                 alignItems: "center",
                 gap: "0.5rem",
                 background: OG,
-                color: "#fff",
+                color: DARK,
                 padding: "0.8rem 1.5rem",
                 borderRadius: "9999px",
                 fontSize: "0.875rem",
@@ -608,7 +710,7 @@ function HomePage() {
                 fontWeight: 700,
                 letterSpacing: "0.22em",
                 textTransform: "uppercase",
-                color: OG,
+                color: OG_TEXT,
                 marginBottom: "0.5rem",
               }}
             >
@@ -626,9 +728,27 @@ function HomePage() {
             >
               Parcul auto din {SITE.city}
             </h2>
-            <p style={{ fontSize: "0.875rem", color: DARK + "80", lineHeight: 1.6 }}>
-              {settings.address || SITE.address}. Te așteptăm să vezi mașinile pe viu și să faci
-              proba pe drum.
+            <address
+              style={{
+                fontStyle: "normal",
+                fontSize: "0.875rem",
+                color: DARK + "cc",
+                lineHeight: 1.6,
+              }}
+            >
+              {settings.address || SITE.address}
+            </address>
+            <p
+              style={{
+                fontSize: "0.875rem",
+                color: DARK + "cc",
+                lineHeight: 1.6,
+                marginTop: "0.5rem",
+              }}
+            >
+              Parcul auto ZOL-OIL se află în comuna {SITE.city}, județul {SITE.county}, aproape de
+              Târgu Secuiesc. Te așteptăm să vezi mașinile pe viu și să faci proba pe drum — sună
+              înainte și îți spunem dacă mașina dorită este la parc.
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem", marginTop: "1.5rem" }}>
               {(settings.maps_url || SITE.mapsDirections) && (
@@ -636,6 +756,7 @@ function HomePage() {
                   href={settings.maps_url || SITE.mapsDirections}
                   target="_blank"
                   rel="noreferrer"
+                  onClick={() => trackContact("maps", "home-location")}
                   style={{
                     background: DARK,
                     color: CREAM,
@@ -654,6 +775,7 @@ function HomePage() {
                   href={settings.waze_url || SITE.waze}
                   target="_blank"
                   rel="noreferrer"
+                  onClick={() => trackContact("waze", "home-location")}
                   style={{
                     border: `1.5px solid ${DARK}28`,
                     color: DARK,
@@ -680,7 +802,7 @@ function HomePage() {
                     fontSize: "0.875rem",
                   }}
                 >
-                  <span style={{ color: DARK + "70" }}>{h.day}</span>
+                  <span style={{ color: DARK + "cc" }}>{h.day}</span>
                   <span style={{ fontWeight: 700, color: DARK }}>{h.value}</span>
                 </div>
               ))}
@@ -695,7 +817,7 @@ function HomePage() {
             }}
           >
             <iframe
-              title="Hartă"
+              title={`Hartă: Parc Auto ZOL-OIL, ${SITE.city}`}
               src={mapsEmbedUrl(settings.address)}
               style={{ width: "100%", height: "100%", minHeight: "320px", display: "block" }}
               loading="lazy"

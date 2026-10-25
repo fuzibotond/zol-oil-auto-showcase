@@ -9,8 +9,18 @@
   Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=()
 
 # Root static images are not fingerprinted, so give them a moderate cache
-# (was max-age=0). The hero should still be replaced with a smaller WebP/AVIF.
+# (was max-age=0). The homepage now uses the responsive /hero/* files; the PNG
+# original is kept only for old links.
 /parc-auto.png
   Cache-Control: public, max-age=2592000
 /favicon-96x96.png
   Cache-Control: public, max-age=2592000
+/og-image.jpg
+  Cache-Control: public, max-age=2592000
+/sal-pictograma.png
+  Cache-Control: public, max-age=2592000
+/hero/*
+  Cache-Control: public, max-age=2592000
+# Self-hosted font files never change in place (a new version gets a new name).
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable

@@ -37,6 +37,56 @@ function withSecurityHeaders(response: Response): Response {
   });
 }
 
+// Canonical origin (build-time). When the request arrives on the www/apex twin
+// of this host (e.g. zoloil.ro vs www.zoloil.ro), 301 to the canonical host so
+// only one hostname gets indexed. Other hosts (*.pages.dev previews, localhost)
+// are left alone. A Cloudflare Redirect Rule can do the same at the edge.
+const SITE_URL = (import.meta.env.VITE_SITE_URL ?? "").replace(/\/$/, "");
+
+function canonicalHostRedirect(request: Request): Response | null {
+  if (!SITE_URL || (request.method !== "GET" && request.method !== "HEAD")) return null;
+  let canonical: URL;
+  try {
+    canonical = new URL(SITE_URL);
+  } catch {
+    return null;
+  }
+  const url = new URL(request.url);
+  const bare = (host: string) => host.replace(/^www\./, "");
+  if (url.host === canonical.host || bare(url.host) !== bare(canonical.host)) return null;
+  url.protocol = canonical.protocol;
+  url.host = canonical.host;
+  return new Response(null, { status: 301, headers: { Location: url.toString() } });
+}
+
+// Legacy URLs from the previous PHP site (seen in the Wayback Machine / old
+// Google index). Section pages 301 to their equivalent; old car adverts
+// (/<id>/<slug>.html, index.php?nr=<id>) have no equivalent — those cars were
+// sold years ago — so they get 410 Gone with the normal "page not found" UI.
+function legacyRedirect(url: URL): string | null {
+  const path = url.pathname.toLowerCase();
+  const cat = url.searchParams.get("cat");
+  if (path === "/oferta" || (path === "/index.php" && cat === "oferta")) return "/masini";
+  if (path === "/index.php" && cat === "contact") return "/contact";
+  if (
+    (path === "/index.php" && !url.searchParams.has("nr")) ||
+    path === "/nyitolap.php" ||
+    path === "/index.html"
+  ) {
+    return "/";
+  }
+  return null;
+}
+
+function isLegacyGone(url: URL): boolean {
+  const path = url.pathname.toLowerCase();
+  return (
+    /^\/\d+\/[^/]+\.html$/.test(path) ||
+    (path === "/index.php" && url.searchParams.has("nr")) ||
+    path === "/show_img.php"
+  );
+}
+
 // h3 swallows in-handler throws into a normal 500 Response with body
 // {"unhandled":true,"message":"HTTPError"} — try/catch alone never fires for those.
 async function normalizeCatastrophicSsrResponse(response: Response): Promise<Response> {
@@ -59,9 +109,32 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const hostRedirect = canonicalHostRedirect(request);
+      if (hostRedirect) return withSecurityHeaders(hostRedirect);
+
+      const url = new URL(request.url);
+      const legacyTarget = legacyRedirect(url);
+      if (legacyTarget) {
+        return withSecurityHeaders(
+          new Response(null, { status: 301, headers: { Location: legacyTarget } }),
+        );
+      }
+
       const handler = await getServerEntry();
-      const response = await handler.fetch(request, env, ctx);
-      return withSecurityHeaders(await normalizeCatastrophicSsrResponse(response));
+      let response = await handler.fetch(request, env, ctx);
+      if (response.status === 404 && isLegacyGone(url)) {
+        response = new Response(response.body, {
+          status: 410,
+          statusText: "Gone",
+          headers: response.headers,
+        });
+      }
+      const out = withSecurityHeaders(await normalizeCatastrophicSsrResponse(response));
+      // Belt and braces next to robots.txt: private areas must never be indexed.
+      if (/^\/(admin|auth)(\/|$)/.test(url.pathname)) {
+        out.headers.set("X-Robots-Tag", "noindex, nofollow");
+      }
+      return out;
     } catch (error) {
       console.error(error);
       return withSecurityHeaders(

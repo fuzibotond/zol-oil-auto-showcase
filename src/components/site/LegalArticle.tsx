@@ -1,35 +1,104 @@
 import type { ReactNode } from "react";
 import type { LegalPageDoc } from "@/lib/types";
 
-// Renders a legal page body as PLAIN TEXT (never HTML): lines starting with "## "
-// become headings, blank lines separate paragraphs. Safe by construction — no
-// dangerouslySetInnerHTML, so admin-entered content can't inject markup.
+// Renders a legal page body from a tiny, safe subset of Markdown — never HTML:
+//   "## " / "### " headings, "* " or "- " bullet lists, blank-line paragraphs,
+//   and [text](url) links limited to https:, mailto:, tel: and site paths.
+// Everything becomes React elements (no dangerouslySetInnerHTML), so
+// admin-entered content can't inject markup or javascript: URLs.
+
+const LINK_RE = /\[([^\]]+)\]\(([^)\s]+)\)/g;
+
+function safeHref(url: string): string | null {
+  return /^(https:\/\/|mailto:|tel:|\/(?!\/))/i.test(url) ? url : null;
+}
+
+/** Turn inline [text](url) links into <a>; anything else stays plain text. */
+function renderInline(text: string, keyPrefix: string): ReactNode[] {
+  const out: ReactNode[] = [];
+  let last = 0;
+  let i = 0;
+  for (const m of text.matchAll(LINK_RE)) {
+    const href = safeHref(m[2]);
+    if (m.index > last) out.push(text.slice(last, m.index));
+    if (href) {
+      const external = href.startsWith("https://");
+      out.push(
+        <a
+          key={`${keyPrefix}-${i++}`}
+          href={href}
+          className="font-medium text-accent underline"
+          {...(external ? { target: "_blank", rel: "noreferrer" } : {})}
+        >
+          {m[1]}
+        </a>,
+      );
+    } else {
+      out.push(m[1]);
+    }
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out;
+}
+
 function renderBlocks(body: string): ReactNode[] {
   const out: ReactNode[] = [];
   let para: string[] = [];
+  let list: string[] = [];
   let key = 0;
-  const flush = () => {
+  const flushPara = () => {
     if (para.length) {
+      const k = key++;
       out.push(
-        <p key={key++} className="whitespace-pre-line">
-          {para.join("\n")}
+        <p key={k} className="whitespace-pre-line">
+          {renderInline(para.join("\n"), `p${k}`)}
         </p>,
       );
       para = [];
     }
   };
+  const flushList = () => {
+    if (list.length) {
+      const k = key++;
+      out.push(
+        <ul key={k} className="list-disc space-y-1 pl-5">
+          {list.map((item, i) => (
+            <li key={i}>{renderInline(item, `l${k}-${i}`)}</li>
+          ))}
+        </ul>,
+      );
+      list = [];
+    }
+  };
+  const flush = () => {
+    flushPara();
+    flushList();
+  };
   for (const raw of body.split("\n")) {
     const line = raw.replace(/\r$/, "");
-    if (line.startsWith("## ")) {
+    const bullet = line.match(/^\s*[*-]\s+(.*)$/);
+    if (line.startsWith("### ")) {
+      flush();
+      out.push(
+        <h3 key={key++} className="font-display text-lg font-semibold tracking-tight pt-1">
+          {line.slice(4).trim()}
+        </h3>,
+      );
+    } else if (line.startsWith("## ")) {
       flush();
       out.push(
         <h2 key={key++} className="font-display text-xl font-semibold tracking-tight pt-2">
           {line.slice(3).trim()}
         </h2>,
       );
+    } else if (bullet) {
+      flushPara();
+      list.push(bullet[1]);
     } else if (line.trim() === "") {
       flush();
     } else {
+      flushList();
       para.push(line);
     }
   }

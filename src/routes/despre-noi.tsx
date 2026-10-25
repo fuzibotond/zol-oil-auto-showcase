@@ -3,26 +3,21 @@ import { Phone, MessageCircle, MapPin, Mail } from "lucide-react";
 import { getAbout } from "@/lib/api/about.functions";
 import { useSiteSettings } from "@/hooks/use-site-settings";
 import { useCompanyInfo } from "@/hooks/use-company-info";
-import { SITE } from "@/lib/site";
+import { SITE, telHref } from "@/lib/site";
+import { JsonLd, seoHead, organizationJsonLd, breadcrumbJsonLd } from "@/lib/seo";
+import { Breadcrumbs } from "@/components/site/Breadcrumbs";
+import { trackContact } from "@/lib/analytics";
 import type { AboutSection } from "@/lib/types";
 
 export const Route = createFileRoute("/despre-noi")({
   loader: async () => await getAbout(),
   head: ({ loaderData }) => {
     const page = loaderData?.page;
-    const title = page?.seo_title || "Despre noi · Parc Auto ZOL-OIL";
-    const desc = page?.seo_description || "";
-    return {
-      meta: [
-        { title },
-        { name: "description", content: desc },
-        { property: "og:title", content: title },
-        { property: "og:description", content: desc },
-        { property: "og:type", content: "website" },
-        { property: "og:url", content: "/despre-noi" },
-      ],
-      links: [{ rel: "canonical", href: "/despre-noi" }],
-    };
+    const title = page?.seo_title || `Despre noi · Parc Auto ZOL-OIL ${SITE.city}`;
+    const desc =
+      page?.seo_description ||
+      `Parc Auto ZOL-OIL din ${SITE.city}, ${SITE.county} — mașini second-hand verificate tehnic din 1994. Află povestea și cum lucrăm.`;
+    return seoHead({ title, description: desc, path: "/despre-noi" });
   },
   component: AboutPage,
 });
@@ -46,28 +41,21 @@ function AboutPage() {
       ).filter(([, v]) => Boolean(v && v.trim()))
     : [];
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "AutoDealer",
-    name: SITE.name,
-    address: {
-      "@type": "PostalAddress",
-      addressLocality: SITE.city,
-      addressRegion: SITE.county,
-      addressCountry: "RO",
-    },
-    telephone: settings.phone,
-    email: settings.contact_email,
-    url: "/despre-noi",
-  };
-
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 py-10 md:py-16">
-      <script
-        type="application/ld+json"
-        // JSON.stringify + escape "<" so a value can never break out of the script tag.
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
+      {/* Shared AutoDealer node (same @id as the homepage) — real NAP only. */}
+      <JsonLd
+        data={[
+          organizationJsonLd(settings, company),
+          breadcrumbJsonLd([
+            { name: "Acasă", path: "/" },
+            { name: "Despre noi", path: "/despre-noi" },
+          ]),
+        ]}
       />
+      <div className="mb-6">
+        <Breadcrumbs items={[{ name: "Acasă", path: "/" }, { name: "Despre noi" }]} />
+      </div>
 
       {/* Hero */}
       <header className="max-w-3xl">
@@ -117,7 +105,8 @@ function AboutPage() {
         </p>
         <div className="mt-5 flex flex-wrap gap-3">
           <a
-            href={`tel:${settings.phone}`}
+            href={telHref(settings.phone)}
+            onClick={() => trackContact("phone", "about-page")}
             className="inline-flex items-center gap-2 rounded-xl bg-foreground px-4 py-3 text-sm font-medium text-background hover:opacity-90"
           >
             <Phone className="h-4 w-4" /> {settings.phone_display}
@@ -126,27 +115,30 @@ function AboutPage() {
             href={`https://wa.me/${settings.whatsapp}`}
             target="_blank"
             rel="noreferrer"
+            onClick={() => trackContact("whatsapp", "about-page")}
             className="inline-flex items-center gap-2 rounded-xl bg-accent px-4 py-3 text-sm font-medium text-accent-foreground hover:opacity-90"
           >
             <MessageCircle className="h-4 w-4" /> WhatsApp
           </a>
           <a
             href={`mailto:${settings.contact_email}`}
+            onClick={() => trackContact("email", "about-page")}
             className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium hover:bg-secondary"
           >
             <Mail className="h-4 w-4" /> {settings.contact_email}
           </a>
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-          <span className="inline-flex items-center gap-2">
-            <MapPin className="h-4 w-4" /> {settings.address || SITE.address}
-          </span>
+          <address className="not-italic inline-flex items-center gap-2">
+            <MapPin className="h-4 w-4" aria-hidden /> {settings.address || SITE.address}
+          </address>
           {(settings.maps_url || SITE.mapsDirections) && (
             <a
               href={settings.maps_url || SITE.mapsDirections}
               target="_blank"
               rel="noreferrer"
-              className="font-medium text-accent hover:underline"
+              onClick={() => trackContact("maps", "about-page")}
+              className="py-1 font-medium text-accent hover:underline"
             >
               Google Maps →
             </a>
@@ -156,7 +148,8 @@ function AboutPage() {
               href={settings.waze_url}
               target="_blank"
               rel="noreferrer"
-              className="font-medium text-accent hover:underline"
+              onClick={() => trackContact("waze", "about-page")}
+              className="py-1 font-medium text-accent hover:underline"
             >
               Waze →
             </a>

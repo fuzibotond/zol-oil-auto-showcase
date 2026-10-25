@@ -40,7 +40,8 @@ function AdminLegalPage() {
       <h1 className="font-display text-3xl font-bold tracking-tight">Pagini legale</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         Confidențialitate, cookie-uri și termeni. Textul actual este orientativ și necesită
-        verificare juridică. Folosește „## ” la începutul unei linii pentru un subtitlu.
+        verificare juridică. Folosește „## ” la începutul unei linii pentru un subtitlu, „* ” pentru
+        o listă și [text](mailto:adresa@exemplu.ro) pentru un link.
       </p>
       <div className="mt-8 space-y-6">
         {data.map((p) => (

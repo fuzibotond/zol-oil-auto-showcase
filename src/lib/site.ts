@@ -74,6 +74,17 @@ export interface SiteSettingsInput {
   social_links: SiteSocialLink[];
 }
 
+/** `tel:` href with spaces/punctuation stripped (e.g. "+40 744 818 846" → "tel:+40744818846"). */
+export function telHref(phone: string): string {
+  return `tel:${(phone ?? "").replace(/[^\d+]/g, "")}`;
+}
+
+/** True when the phone is the template placeholder (0700 000 000), i.e. not real NAP data. */
+export function isPlaceholderPhone(phone: string | null | undefined): boolean {
+  const digits = (phone ?? "").replace(/\D/g, "");
+  return !digits || /^(40)?0?700000000$/.test(digits);
+}
+
 /** Google Maps embed URL (no API key) derived from a plain-text address. */
 export function mapsEmbedUrl(address: string): string {
   const q = encodeURIComponent(address?.trim() || SITE.address);
