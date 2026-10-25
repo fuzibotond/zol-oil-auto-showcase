@@ -424,15 +424,17 @@ export interface LeadWriteInput {
   marketing_consent?: boolean;
 }
 
-export async function insertLead(input: LeadWriteInput): Promise<void> {
+/** Inserts a lead and returns its id. */
+export async function insertLead(input: LeadWriteInput): Promise<string> {
   const db = getDB();
+  const id = newId();
   await db
     .prepare(
       `INSERT INTO leads (id, car_id, name, phone, email, message, source, status, marketing_consent, created_at)
        VALUES (?,?,?,?,?,?,?, 'nou', ?, ?)`,
     )
     .bind(
-      newId(),
+      id,
       input.car_id ?? null,
       input.name,
       input.phone,
@@ -440,6 +442,36 @@ export async function insertLead(input: LeadWriteInput): Promise<void> {
       input.message ?? null,
       input.source ?? "website",
       input.marketing_consent ? 1 : 0,
+      nowIso(),
+    )
+    .run();
+  return id;
+}
+
+export interface LeadNotificationLog {
+  lead_id: string | null;
+  status: "sent" | "failed" | "skipped";
+  recipients?: string | null;
+  message_id?: string | null;
+  error?: string | null;
+  duration_ms?: number | null;
+}
+
+export async function insertLeadNotification(log: LeadNotificationLog): Promise<void> {
+  const db = getDB();
+  await db
+    .prepare(
+      `INSERT INTO lead_notifications (id, lead_id, channel, status, recipients, message_id, error, duration_ms, created_at)
+       VALUES (?,?, 'email', ?,?,?,?,?,?)`,
+    )
+    .bind(
+      newId(),
+      log.lead_id,
+      log.status,
+      log.recipients ?? null,
+      log.message_id ?? null,
+      log.error ? log.error.slice(0, 2000) : null,
+      log.duration_ms ?? null,
       nowIso(),
     )
     .run();

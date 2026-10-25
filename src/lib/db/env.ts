@@ -16,8 +16,12 @@ export interface CloudflareEnv {
   R2: R2Bucket;
   /** Custom image-delivery base URL, e.g. https://img.zol-oil.ro (no trailing slash). */
   R2_PUBLIC_BASE_URL?: string;
-  RESEND_API_KEY?: string;
+  /** Service binding to the zol-oil-mailer Worker (owns the send_email binding). */
+  MAILER?: { fetch(input: string, init?: RequestInit): Promise<Response> };
+  /** Comma-separated new-lead notification recipients (verified Email Routing destinations). */
   NOTIFY_EMAIL?: string;
+  /** Sender address on the Email Routing domain; defaults to notificari@zoloil.ro. */
+  NOTIFY_FROM?: string;
   /** Cloudflare Access team domain, e.g. myteam.cloudflareaccess.com */
   ACCESS_TEAM_DOMAIN?: string;
   /** Cloudflare Access application AUD tag (for JWT validation). */

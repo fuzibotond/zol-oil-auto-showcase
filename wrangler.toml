@@ -22,6 +22,13 @@ migrations_dir = "migrations/d1"
 binding = "R2"
 bucket_name = "zol-oil-images"
 
+# Service binding to the private zol-oil-mailer Worker (workers/mailer), which owns
+# the Email Routing send_email binding — Pages Functions can't hold one directly.
+# Deploy the Worker first: npx wrangler deploy --config workers/mailer/wrangler.toml
+[[services]]
+binding = "MAILER"
+service = "zol-oil-mailer"
+
 [vars]
 # Public, build-time vars (VITE_ prefix). Cloudflare Pages injects [vars] into the
 # CI build, and Vite inlines any VITE_-prefixed value into the client bundle.
@@ -37,5 +44,7 @@ VITE_GTM_ID = "GTM-K7TXVR2Q"
 # Left unset for now → images are served same-origin via the /img/<key> route.
 # R2_PUBLIC_BASE_URL = "https://img.zol-oil.ro"
 
-# Secrets/vars (RESEND_API_KEY, NOTIFY_EMAIL, ACCESS_TEAM_DOMAIN, ACCESS_AUD,
+# Secrets/vars (NOTIFY_EMAIL, NOTIFY_FROM, ACCESS_TEAM_DOMAIN, ACCESS_AUD,
 # ADMIN_EMAILS) are set in the Pages dashboard / `.dev.vars`, not here.
+# NOTIFY_EMAIL = comma-separated new-lead recipients; each must be a VERIFIED
+# Email Routing destination address or delivery fails (logged in lead_notifications).

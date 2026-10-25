@@ -60,8 +60,13 @@ Cloudflare dashboard → **Workers & Pages** → your Pages project → **Settin
 | `ACCESS_AUD` | *(the AUD tag from Step 1.5)* | |
 | `ADMIN_EMAILS` | `owner@example.com` | comma-separated for multiple admins |
 
-Optional vars: `RESEND_API_KEY` + `NOTIFY_EMAIL` (new-lead email), `NOTIFY_FROM`
-(verified Resend sender), `VITE_SITE_URL`. The old `SUPABASE_*` variables are **no
+Optional vars: `NOTIFY_EMAIL` (comma-separated new-lead recipients — each must be a
+verified Email Routing destination address), `NOTIFY_FROM` (sender on `zoloil.ro`,
+default `notificari@zoloil.ro`), `VITE_SITE_URL`. New-lead emails are sent by the
+private `zol-oil-mailer` Worker (`workers/mailer`, deploy with
+`npx wrangler deploy --config workers/mailer/wrangler.toml`) over the `MAILER`
+service binding, after the response; every attempt is logged in the
+`lead_notifications` D1 table. The old `SUPABASE_*` variables are **no
 longer used** and can be deleted once the migration is verified.
 
 > I never handle these secret values — set them yourself in the dashboard.

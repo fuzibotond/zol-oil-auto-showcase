@@ -5,9 +5,11 @@
 # D1 (DB) and R2 (R2) are BINDINGS, not secrets — they are declared in
 # wrangler.toml, not here.
 
-# Email notifications for new leads (Resend HTTP API)
-RESEND_API_KEY=
-NOTIFY_EMAIL=contact@your-domain.com
+# New-lead email notifications (Cloudflare Email Routing via the MAILER service
+# binding → workers/mailer). Comma-separated; each address must be a VERIFIED
+# Email Routing destination address. NOTIFY_FROM is optional (default notificari@zoloil.ro).
+NOTIFY_EMAIL=owner@example.com
+# NOTIFY_FROM=notificari@zoloil.ro
 
 # Cloudflare Access (admin auth) — used to validate the Access JWT server-side.
 # ACCESS_TEAM_DOMAIN is your team domain, e.g. myteam.cloudflareaccess.com

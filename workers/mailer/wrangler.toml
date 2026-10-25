@@ -1,0 +1,24 @@
+# zol-oil-mailer — tiny private Worker that owns the Email Routing `send_email`
+# binding. Cloudflare Pages Functions cannot hold a send_email binding, so the
+# Pages app reaches this Worker over a service binding (`MAILER` in the root
+# wrangler.toml). It has NO public URL (workers_dev/preview_urls off, no routes),
+# so only bound services can call it.
+#
+# Email Routing can deliver ONLY to destination addresses verified under
+# Cloudflare → Email Routing → Destination addresses. Sending is free.
+#
+# Deploy: npx wrangler deploy --config workers/mailer/wrangler.toml
+
+name = "zol-oil-mailer"
+main = "index.ts"
+compatibility_date = "2026-07-01"
+workers_dev = false
+preview_urls = false
+
+# No destination restriction: may send to any VERIFIED destination address.
+# The actual recipient list lives in the Pages app's NOTIFY_EMAIL secret.
+[[send_email]]
+name = "EMAIL"
+
+[observability]
+enabled = true

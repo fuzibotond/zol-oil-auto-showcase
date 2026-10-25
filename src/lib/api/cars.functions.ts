@@ -62,29 +62,36 @@ export const submitLead = createServerFn({ method: "POST" })
     const honeypotFilled = (data.honeypot ?? "").trim().length > 0;
     const repo = await import("@/lib/db/repository");
 
-    await repo.insertLead({
+    const source = honeypotFilled
+      ? `${data.source || "website"}-honeypot`
+      : data.source || "website";
+    const leadId = await repo.insertLead({
       car_id: data.car_id ?? null,
       name: data.name,
       phone: data.phone,
       email: data.email || null,
       message: data.message || null,
-      source: honeypotFilled ? `${data.source || "website"}-honeypot` : data.source || "website",
+      source,
       marketing_consent: Boolean(data.marketing_consent),
     });
 
-    // Best-effort email notification; never fails the lead submission.
+    // Email notification runs AFTER the response (waitUntil) and never throws,
+    // so it can neither delay nor fail the submission. Attempts are logged to
+    // the lead_notifications table.
     if (!honeypotFilled) {
-      try {
-        const { notifyNewLead } = await import("@/lib/notify");
-        await notifyNewLead({
-          name: data.name,
-          phone: data.phone,
-          email: data.email || null,
-          message: data.message || null,
-        });
-      } catch {
-        // ignore notification errors
-      }
+      const { getRequest } = await import("@tanstack/react-start/server");
+      const { notifyNewLead } = await import("@/lib/notify");
+      const task = notifyNewLead({
+        leadId,
+        name: data.name,
+        phone: data.phone,
+        email: data.email || null,
+        message: data.message || null,
+        source,
+        carId: data.car_id ?? null,
+      }).catch((e) => console.error("[notify] unexpected error:", e));
+      const req = getRequest() as unknown as { waitUntil?: (p: Promise<unknown>) => void };
+      req.waitUntil?.(task);
     }
 
     return { ok: true };
