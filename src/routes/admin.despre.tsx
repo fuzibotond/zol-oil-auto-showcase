@@ -12,6 +12,7 @@ import {
   adminDeleteAboutSection,
 } from "@/lib/api/about.functions";
 import type { AboutPage, AboutSection, ImagePosition } from "@/lib/types";
+import { downscaleForUpload } from "@/lib/images/client-resize";
 
 export const Route = createFileRoute("/admin/despre")({
   component: AdminAboutPage,
@@ -276,7 +277,7 @@ function SectionEditor({
     setUploading(true);
     try {
       const fd = new FormData();
-      fd.append("file", file);
+      fd.append("file", await downscaleForUpload(file));
       const res = await fetch("/api/upload", { method: "POST", body: fd });
       const body = (await res.json().catch(() => ({}))) as {
         url?: string;

@@ -12,6 +12,9 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { GTM_ID, consentDefaultScript, gtmLoaderScript } from "@/lib/consent";
+import { absoluteUrl, DEFAULT_OG_IMAGE_PATH } from "@/lib/seo";
+import { getSiteSettings } from "@/lib/api/site-settings.functions";
+import { getCompanyInfo } from "@/lib/api/company.functions";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { CookieConsent } from "@/components/site/CookieConsent";
@@ -69,6 +72,15 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  // Site-wide contact settings + company identity, loaded on the server so the
+  // header/footer/contact blocks are server-rendered with the real NAP data
+  // (useSiteSettings / useCompanyInfo seed from this). Both fns never throw.
+  loader: async () => {
+    const [settings, company] = await Promise.all([getSiteSettings(), getCompanyInfo()]);
+    return { settings, company };
+  },
+  // Contact data changes rarely; don't re-fetch it on every client navigation.
+  staleTime: 5 * 60_000,
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -82,7 +94,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "author", content: "ZOL-OIL" },
       { property: "og:site_name", content: "Parc Auto ZOL-OIL" },
       { property: "og:type", content: "website" },
+      { property: "og:locale", content: "ro_RO" },
+      { property: "og:image", content: absoluteUrl(DEFAULT_OG_IMAGE_PATH) },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: absoluteUrl(DEFAULT_OG_IMAGE_PATH) },
       { name: "theme-color", content: "#22282b" },
     ],
     links: [
@@ -92,11 +107,22 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", type: "image/png", sizes: "96x96", href: "/favicon-96x96.png" },
       { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" },
       { rel: "manifest", href: "/site.webmanifest" },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      // Fonts are self-hosted (see @font-face in styles.css): no render-blocking
+      // third-party CSS and no visitor IP sent to Google. Both subset files
+      // are preloaded: every page uses them above the fold.
       {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700;800&display=swap",
+        rel: "preload",
+        href: "/fonts/inter-ro.woff2",
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous",
+      },
+      {
+        rel: "preload",
+        href: "/fonts/sora-ro.woff2",
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous",
       },
     ],
   }),
@@ -122,6 +148,12 @@ function RootShell({ children }: { children: ReactNode }) {
         ) : null}
       </head>
       <body suppressHydrationWarning>
+        <a
+          href="#continut"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded-xl focus:bg-foreground focus:px-4 focus:py-2 focus:text-sm focus:text-background"
+        >
+          Sari la conținut
+        </a>
         {/* GTM noscript fallback for browsers with JavaScript disabled. */}
         {GTM_ID ? (
           <noscript>
@@ -150,7 +182,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <div suppressHydrationWarning className="flex min-h-screen flex-col">
         {!isAdmin && <Header />}
-        <main className="flex-1">
+        <main id="continut" className="flex-1">
           <Outlet />
         </main>
         {!isAdmin && <Footer />}

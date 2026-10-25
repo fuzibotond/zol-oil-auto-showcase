@@ -1,8 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { Phone, MessageCircle, MapPin, Menu, X } from "lucide-react";
 import { useState } from "react";
-import { SITE } from "@/lib/site";
+import { SITE, telHref } from "@/lib/site";
 import { useSiteSettings } from "@/hooks/use-site-settings";
+import { trackContact } from "@/lib/analytics";
 
 const navLinks = [
   { to: "/" as const, label: "Acasă" },
@@ -20,22 +21,29 @@ export function Header() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         <Link to="/" className="flex items-center gap-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl overflow-hidden">
-            <img src="/favicon-96x96.png" alt="ZOL-OIL logo" className="h-9 w-9 object-contain" />
+            <img
+              src="/favicon-96x96.png"
+              alt=""
+              width={36}
+              height={36}
+              className="h-9 w-9 object-contain"
+            />
           </div>
-          <div className="leading-tight">
+          <div className="whitespace-nowrap leading-tight">
             <div className="font-display text-base font-semibold tracking-tight">ZOL-OIL</div>
             <div className="text-[11px] text-muted-foreground">Parc Auto · {SITE.city}</div>
           </div>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-1">
+        <nav className="hidden md:flex items-center gap-1" aria-label="Navigație principală">
           {navLinks.map((l) => (
             <Link
               key={l.to}
               to={l.to}
-              className="rounded-full px-4 py-2 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+              className="whitespace-nowrap rounded-full px-3 lg:px-4 py-2 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground"
               activeProps={{
-                className: "rounded-full px-4 py-2 text-sm bg-secondary text-foreground",
+                className:
+                  "whitespace-nowrap rounded-full px-3 lg:px-4 py-2 text-sm bg-secondary text-foreground",
               }}
               activeOptions={{ exact: l.to === "/" }}
             >
@@ -46,8 +54,9 @@ export function Header() {
 
         <div className="hidden md:flex items-center gap-2">
           <a
-            href={`tel:${settings.phone}`}
-            className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-2 text-sm font-medium hover:bg-secondary"
+            href={telHref(settings.phone)}
+            onClick={() => trackContact("phone", "header")}
+            className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-border bg-card px-3 py-2 text-sm font-medium hover:bg-secondary"
           >
             <Phone className="h-4 w-4" /> {settings.phone_display}
           </a>
@@ -55,6 +64,7 @@ export function Header() {
             href={`https://wa.me/${settings.whatsapp}`}
             target="_blank"
             rel="noreferrer"
+            onClick={() => trackContact("whatsapp", "header")}
             className="inline-flex items-center gap-2 rounded-full bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90"
           >
             <MessageCircle className="h-4 w-4" /> WhatsApp
@@ -63,15 +73,22 @@ export function Header() {
 
         <button
           className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border"
+          type="button"
           onClick={() => setOpen(!open)}
-          aria-label="Meniu"
+          aria-label={open ? "Închide meniul" : "Deschide meniul"}
+          aria-expanded={open}
+          aria-controls="meniu-mobil"
         >
           {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>
 
       {open && (
-        <div className="md:hidden border-t border-border bg-background">
+        <nav
+          id="meniu-mobil"
+          aria-label="Navigație principală"
+          className="md:hidden border-t border-border bg-background"
+        >
           <div className="mx-auto max-w-7xl px-4 py-3 flex flex-col gap-1">
             {navLinks.map((l) => (
               <Link
@@ -85,7 +102,8 @@ export function Header() {
             ))}
             <div className="mt-2 grid grid-cols-2 gap-2">
               <a
-                href={`tel:${settings.phone}`}
+                href={telHref(settings.phone)}
+                onClick={() => trackContact("phone", "header-mobile")}
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-border px-3 py-3 text-sm"
               >
                 <Phone className="h-4 w-4" /> Sună
@@ -94,6 +112,7 @@ export function Header() {
                 href={`https://wa.me/${settings.whatsapp}`}
                 target="_blank"
                 rel="noreferrer"
+                onClick={() => trackContact("whatsapp", "header-mobile")}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-3 py-3 text-sm text-accent-foreground"
               >
                 <MessageCircle className="h-4 w-4" /> WhatsApp
@@ -108,7 +127,7 @@ export function Header() {
               <MapPin className="h-4 w-4" /> {SITE.city}, {SITE.county}
             </a>
           </div>
-        </div>
+        </nav>
       )}
     </header>
   );

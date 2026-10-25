@@ -35,10 +35,13 @@ service = "zol-oil-mailer"
 # Google Tag Manager container — tracking is consent-gated (Consent Mode v2);
 # GA4 + Meta Pixel are configured as tags INSIDE GTM, not here.
 VITE_GTM_ID = "GTM-K7TXVR2Q"
+VITE_SITE_URL = "https://zoloil.ro"
 
-# Canonical origin — powers sitemap.xml, robots.txt and SEO canonical/OG tags.
-# Currently UNSET, which breaks those. Set once the final domain is decided, e.g.:
-# VITE_SITE_URL = "https://www.zoloil.ro"   # or the <project>.pages.dev URL for now
+# Canonical origin — DECIDED 2026-10-25: https://zoloil.ro (non-www, no trailing slash).
+# Powers sitemap.xml, robots.txt, canonical/OG tags AND the www -> apex 301 in
+# src/server.ts. VITE_SITE_URL is a BUILD-time var (Vite inlines it): it is set in the
+# Cloudflare Pages dashboard (Settings -> Variables and Secrets, Production), where the
+# old value https://www.zoloil.ro lived. Change it there; see docs/SEO_AUDIT_2026-10.md §5.
 
 # Custom image-delivery base URL (attach a custom domain to the R2 bucket; no r2.dev in prod).
 # Left unset for now → images are served same-origin via the /img/<key> route.

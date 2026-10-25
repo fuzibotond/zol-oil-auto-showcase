@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Facebook, MapPin, Phone, Mail } from "lucide-react";
-import { SITE, SAL } from "@/lib/site";
+import { SITE, SAL, telHref } from "@/lib/site";
+import { trackContact } from "@/lib/analytics";
 import { openCookieSettings } from "@/lib/consent";
 import { useSiteSettings } from "@/hooks/use-site-settings";
 import { useCompanyInfo } from "@/hooks/use-company-info";
@@ -52,8 +53,8 @@ export function Footer() {
           )}
         </div>
         <div>
-          <div className="text-sm font-semibold mb-3">Navigație</div>
-          <ul className="space-y-2 text-sm text-muted-foreground">
+          <h2 className="font-sans text-sm font-semibold tracking-normal mb-3">Navigație</h2>
+          <ul className="space-y-1 text-sm text-muted-foreground [&_a]:inline-block [&_a]:py-1">
             <li>
               <Link to="/" className="hover:text-foreground">
                 Acasă
@@ -77,27 +78,45 @@ export function Footer() {
           </ul>
         </div>
         <div>
-          <div className="text-sm font-semibold mb-3">Contact</div>
-          <ul className="space-y-2 text-sm text-muted-foreground">
-            <li className="flex items-center gap-2">
-              <MapPin className="h-4 w-4" /> {settings.address || SITE.address}
-            </li>
-            <li className="flex items-center gap-2">
-              <Phone className="h-4 w-4" />{" "}
-              <a href={`tel:${settings.phone}`}>{settings.phone_display}</a>
-            </li>
-            <li className="flex items-center gap-2">
-              <Mail className="h-4 w-4" />{" "}
-              <a href={`mailto:${settings.contact_email}`}>{settings.contact_email}</a>
-            </li>
-          </ul>
+          <h2 className="font-sans text-sm font-semibold tracking-normal mb-3">Contact</h2>
+          <address className="not-italic">
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 flex-shrink-0" aria-hidden />{" "}
+                {settings.address || SITE.address}
+              </li>
+              <li className="flex items-center gap-2">
+                <Phone className="h-4 w-4 flex-shrink-0" aria-hidden />{" "}
+                <a
+                  href={telHref(settings.phone)}
+                  onClick={() => trackContact("phone", "footer")}
+                  className="py-1 hover:text-foreground"
+                >
+                  {settings.phone_display}
+                </a>
+              </li>
+              <li className="flex items-center gap-2">
+                <Mail className="h-4 w-4 flex-shrink-0" aria-hidden />{" "}
+                <a
+                  href={`mailto:${settings.contact_email}`}
+                  onClick={() => trackContact("email", "footer")}
+                  className="py-1 hover:text-foreground"
+                >
+                  {settings.contact_email}
+                </a>
+              </li>
+            </ul>
+          </address>
         </div>
       </div>
       <div className="border-t border-border">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 text-xs text-muted-foreground">
           <div className="flex flex-col items-center gap-4 text-center md:grid md:grid-cols-3 md:items-center md:text-left">
             {/* Left — legal links */}
-            <nav className="flex flex-wrap justify-center gap-x-4 gap-y-1 md:justify-start">
+            <nav
+              aria-label="Informații legale"
+              className="flex flex-wrap justify-center gap-x-4 gap-y-1 md:justify-start [&>*]:py-1"
+            >
               <Link to="/confidentialitate" className="hover:text-foreground">
                 Confidențialitate
               </Link>
